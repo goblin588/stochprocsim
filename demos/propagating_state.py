@@ -31,13 +31,14 @@ def _():
         return RenewalProcess([1-q for q in q_survive_st[:-1]]) # the last state always emit 1
     return (
         Causal_Models,
+        ExactTransitionModel,
         QuantumTransitionModel,
         Simulator,
         eval_diverge,
         generate_quantum_model,
         get_uniform_renewal,
         np,
-        sp,
+        plt,
     )
 
 
@@ -47,63 +48,76 @@ def _(
     QuantumTransitionModel,
     Simulator,
     get_uniform_renewal,
-    sp,
+    np,
+    plt,
 ):
-    N = 3
+    N = 6
     exact_model = get_uniform_renewal(N-1) # 3 causal states
 
     CS = Causal_Models[N]
     CS.set_U(CS.U_theo)
 
-    s0_p = None
-
-    def transition(v):
-        path2 = sp.Matrix([[v[0]],[v[2]]])
-        path1 = sp.Matrix([[v[1]],[v[3]]])
-        α, β = path2.norm(), path1.norm()
-        return path2, α, β
-
-    print(f'Using normal Causal States')
-    for i in range(len(CS)):
-        s0 = CS.states[i]
-        # print(f's{i}: {s0}')
-        v = CS.U@s0
-        path2, a, b = transition(v)
-        print(f"s{i} p0:{(a**2):0.2f} p1:{(b**2):0.2f}")
-
-    print(f'\nPropagating s1')
-    s0 = CS.states[0]
-    for i in range(len(CS)):
-        # print(f's{i}: {s0}')
-        v = CS.U@s0
-        path2, a, b = transition(v)
-        # p11, p12= sp.Matrix([path1[0]]).norm(),sp.Matrix([path1[1]]).norm() 
-        print(f"s{i} p0:{(a**2):0.2f} p1:{(b**2):0.2f}")
-        s0 = (sp.Matrix([[path2[0]], [0], [path2[1]], [0]]))/a
-        # s0.simplify()
-
     qq_sim = Simulator(QuantumTransitionModel(CS))
-    qq_sim.get_output_distribution_propagaged_output_states()
-    return CS, N, exact_model
+    data = qq_sim.get_output_distribution_exp(propagate_outputs=True, include_loss=True)
+    data = data * (1/(1-CS.loop_loss))
+    data_theory = qq_sim.get_output_distribution_exp()
+
+    print(1/(1-CS.loop_loss))
+
+    x = np.arange(1, len(data) + 1)
+
+    # experimental bars
+    plt.bar(
+        x,
+        data,
+        color="gold",
+        edgecolor="black",
+        label="With Noise"
+    )
+
+    # theory bars (outline only, dotted)
+    plt.bar(
+        x,
+        data_theory,
+        facecolor="none",
+        edgecolor="black",
+        linestyle=":",
+        linewidth=2,
+        label="Theory (Noiseless Model)"
+    )
+
+    plt.xlabel("Output bin")
+    plt.ylabel("Probability")
+    plt.xticks(x)
+
+    plt.legend()
+    plt.show()
+    return CS, exact_model
 
 
 @app.cell
 def _(
     CS,
-    N,
-    QuantumTransitionModel,
+    ExactTransitionModel,
     Simulator,
     eval_diverge,
     exact_model,
     generate_quantum_model,
     np,
 ):
-
-    q_sim = Simulator(QuantumTransitionModel(CS))
+    Nv = 3
+    q_sim = Simulator(ExactTransitionModel(CS))
     q_model = generate_quantum_model(np.array(q_sim.get_output_distribution()))
-    p_dist = exact_model.gen_dists(N)[0]
-    q_dist = q_model.gen_dists(N)[0]
-    kl_div = eval_diverge(p_dist, q_dist, his_steps=N-1)
+    p_dist = exact_model.gen_dists(Nv)[0]
+    q_dist = q_model.gen_dists(Nv)[0]
+
+    print(q_dist)
+    kl_div = eval_diverge(p_dist, q_dist, his_steps=Nv-1)
+    return
+
+
+@app.cell
+def _():
     return
 
 

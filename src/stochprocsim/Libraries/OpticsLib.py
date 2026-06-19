@@ -65,7 +65,8 @@ if flipped == True:
         return (1/np.sqrt(2))*np.array([[np.sqrt(2),0,0,0],[0,np.sqrt(2),0,0],
                                           [0,0,np.round(1-(1j*np.cos(2*theta)),ROUND_TO),np.round(-1j*np.sin(2*theta),ROUND_TO)],[0,0,np.round(-1j*np.sin(2*theta),ROUND_TO),np.round(1+(1j*np.cos(2*theta)),ROUND_TO)]])
 
-    PBS = np.array([[1,0,0,0],
+    PBS = np.array(
+                [[1,0,0,0],
                 [0,0,0,1j],
                 [0,0,1,0],
                 [0,1j,0,0]])

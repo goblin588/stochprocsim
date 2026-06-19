@@ -171,18 +171,27 @@ def _(
     qopt_yerr = [0.004107549092911485, 0.0018178942566835653, 0.0020410036273023104, 0.003071878242562731] # Gaussian & Poisson Err # 20 samps
 
 
-    plt.plot(x_class, y_classical, '-s', label='Classical')  
-    plt.errorbar(x_quant, y_quantum, yerr=qtheo_yerr, fmt='-o', capsize=3, label='Quantum (Theo)',)
-    # plt.plot(x_quant, y_qopt_GU, '-p', label='Quantum GU (Exp)')
-    plt.errorbar(x_quant, y_qopt, yerr=qopt_yerr, fmt='--p',capsize=3, label='Quantum (Optics)') 
+    palette = ["#3B5BA5", "#800E13", "#E63946"]
 
-    plt.plot(x_quant, [0.190893907461805, 0.192409608612894, 0.209033912695447, 0.223090442570527])
+    plt.plot(x_class, y_classical, '-s', label='Classical bound', color=palette[0], linewidth=1.5)  
+
+    plt.errorbar(x_quant, y_quantum, yerr=qtheo_yerr, fmt='-^', capsize=3, label='Quantum (Target)', color=palette[1], linewidth=1.5)
+    # plt.plot(x_quant, y_qopt_GU, '-p', label='Quantum GU (Exp)')
+    # plt.errorbar(x_quant, y_qopt, yerr=qopt_yerr, fmt='--o',capsize=3, label='Quantum (Experimental)', color=palette[2], linewidth=1.5) 
+
+
+    plt.ylim(0.005, 0.055)
+
+    ymax = plt.gca().get_ylim()[1]
+    plt.fill_between(x_class, y_classical, ymax, alpha=0.3, color='none', edgecolor=palette[0], hatch='///')
+
+    # plt.plot(x_quant, [0.0841521389913097, 0.0608293450616597, 0.0614688242516527, 0.0559775975679753])
 
     plt.xticks(x_class)
     plt.xlabel('N')
-    plt.ylabel('KL Divergence')
+    plt.ylabel('Divergence Rate')
     # plt.ylim(0,0.1)
-    plt.title('KL Divergence Rate for Proc Length N')
+    plt.title('KL Divergence Rate for Process Depth N')
     plt.legend()
     plt.grid(True)
     plt.show()

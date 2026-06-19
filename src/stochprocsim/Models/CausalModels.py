@@ -6,6 +6,8 @@ from .WaveplateAngles import *
 # For reordering theory unitary path mode definitions into experimental ones
 # This should always be True unless intentionally trying to check unflipped versions
 
+loop_loss = [0.4, 0.48, 0.5, 0.51, 0.52, 0.53, 0.54]
+
 class CausalModel():
     def __init__(self, U, states:list, angles_NTU, angles_GU, name=None):
         self.U = U
@@ -18,6 +20,9 @@ class CausalModel():
         self.angles_NTU = angles_NTU
         self.angles_GU = angles_GU
         self.angles_GU = angles_GU
+        loss = np.asarray(loop_loss[:len(self)], dtype=float)
+        # cumulative loss
+        self.loop_loss = 1 - np.cumprod(1 - loss)
 
     def set_U(self, U):
         self.U = U

@@ -48,6 +48,29 @@ class Simulator():
             a_prod *= a
         return res
     
+    def get_output_distribution_exp(self, propagate_outputs: bool = False, 
+                                    include_loss: bool = False):
+        """
+        Experimental output distribution with optional error models
+        """
+
+        # --- choose probability model ---
+        if propagate_outputs:
+            probs = self.get_output_distribution_propagaged_output_states()
+        else:
+            probs = self.get_output_distribution()
+
+        probs = np.array(probs, dtype=float)
+
+        # print(f'probs: {len(probs)}')
+        # print(f'loss: {len(self._transition_model.model.loop_loss)}')
+
+        # --- include loss ---
+        if include_loss:
+            loss = np.asarray(self._transition_model.model.loop_loss, dtype=float)
+            probs = probs * (1 - loss)
+        return probs.tolist()
+
     def get_output_distribution_propagaged_output_states(self):
         # Get transition probabilities propagating output states
         model = self._transition_model.model
