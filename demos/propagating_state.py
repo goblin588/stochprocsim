@@ -51,7 +51,7 @@ def _(
     np,
     plt,
 ):
-    N = 6
+    N = 4
     exact_model = get_uniform_renewal(N-1) # 3 causal states
 
     CS = Causal_Models[N]
@@ -105,7 +105,7 @@ def _(
     generate_quantum_model,
     np,
 ):
-    Nv = 3
+    Nv = 5
     q_sim = Simulator(ExactTransitionModel(CS))
     q_model = generate_quantum_model(np.array(q_sim.get_output_distribution()))
     p_dist = exact_model.gen_dists(Nv)[0]

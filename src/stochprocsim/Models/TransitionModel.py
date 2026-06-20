@@ -1,44 +1,29 @@
-import sympy as sp
-import pandas as pd 
+import pandas as pd
 import numpy as np
 
-from .CausalModels import Causal_Models, flipped
+from .CausalModels import Causal_Models
 
-α, β = sp.symbols('α β')
 
-class TransitionModel():
+class TransitionModel:
     def __init__(self, model):
         self.model = model
         self.N = len(model)
         self.name = model.name
 
-    def sample_output(self, model, NSamples_α, NSamples_β = 0):
+    def sample_output(self, model, n_photons: int):
         rows = []
-
+        n_survive = n_photons
         for i in range(len(model)):
-            α_val, β_val = self.get_output_probabilities(len(model), i)
-            
-            # NSamples_β = np.random.poisson(β_val * NSamples_α)
-            # NSamples_α = np.random.poisson(α_val * NSamples_α)
-
-            NSurvive = np.random.binomial(NSamples_α, α_val)
-            NLost = NSamples_α - NSurvive
-
-            NSamples_α = NSurvive
-            NSamples_β = NLost
-
-            rows.append({
-                "N path |0>": NSamples_α,
-                "N path |1>": NSamples_β
-            })
+            p_survive, _ = self.get_output_probabilities(len(model), i)
+            n_next = np.random.binomial(n_survive, float(p_survive))
+            n_lost = n_survive - n_next
+            rows.append({"N path |0>": n_next, "N path |1>": n_lost})
+            n_survive = n_next
         return pd.DataFrame(rows)
 
     def __len__(self):
         return self.N
 
-class ClassicalTransitionModel(TransitionModel):
-    def __init__(self):
-        pass
 
 class ExactTransitionModel(TransitionModel):
     def __init__(self, model):
@@ -61,42 +46,27 @@ class QuantumTransitionModel(TransitionModel):
         self.title = 'Quantum'
         
     def get_output_probabilities(self, N, j):
-        v = self.model.U@self.model.states[j]
-        if flipped:
-            path2 = sp.Matrix([[v[2]],[v[3]]])
-            path1 = sp.Matrix([[v[0]],[v[1]]])
-        else:
-            path2 = sp.Matrix([[v[0]],[v[2]]])
-            path1 = sp.Matrix([[v[1]],[v[3]]])
-        α, β = path2.norm(), path1.norm()
-        return α**2, β**2
+        v = self.model.U @ self.model.states[j]
+        path2, path1 = v[[0, 2]], v[[1, 3]]   # NTU: path2 at 0,2 — path1 at 1,3
+        return float(np.linalg.norm(path2) ** 2), float(np.linalg.norm(path1) ** 2)
 
 def print_model_probabilities():
-    for model in Causal_Models.values(): 
+    for model in Causal_Models.values():
         print(f'\n{model.name}')
-        N = len(model)
         rows = []
         for i, state in enumerate(model[:-1]):
-            v = model.U@state
-            print(f'V norm: {v.norm()}')
-            # v13 = sp.Matrix([[v[0]],[v[1]]])
-            # v24 = sp.Matrix([[v[2]],[v[3]]])
-            v13 = sp.Matrix([[v[0]],[v[2]]])
-            v24 = sp.Matrix([[v[1]],[v[3]]])
-
-            α, β = v13.norm(), v24.norm()
-            u13, u24 = v13/α, v24/β
-            α_val, β_val = α**2, β**2
-            ip1 = sp.Abs((u13.conjugate().T @ sp.Matrix([[model[i+1][0]],[model[i+1][2]]]))[0])
-            ip2 = sp.Abs((u24.conjugate().T @ sp.Matrix([[model.s0[0]],[model.s0[2]]]))[0]) 
-
+            v = model.U @ state
+            v13, v24 = v[[0, 2]], v[[1, 3]]
+            α, β = np.linalg.norm(v13), np.linalg.norm(v24)
+            u13, u24 = v13 / α, v24 / β
+            s_next = model[i + 1][[0, 2]]
+            ip1 = abs(np.vdot(u13, s_next))
+            ip2 = abs(np.vdot(u24, model.s0[[0, 2]]))
             rows.append({
                 "State": f"s{i}",
-                "α²": round(α_val, 2),
-                "β²": round(β_val, 2),
-                "⟨u13|sj+1⟩": round(float(sp.N(ip1)),2),
-                "⟨u24|s0⟩": round(float(sp.N(ip2)),2)
+                "α²": round(α ** 2, 2),
+                "β²": round(β ** 2, 2),
+                "⟨u13|sj+1⟩": round(ip1, 2),
+                "⟨u24|s0⟩": round(ip2, 2),
             })
-
-        df = pd.DataFrame(rows)
-        print(df.to_string(index=False))
+        print(pd.DataFrame(rows).to_string(index=False))

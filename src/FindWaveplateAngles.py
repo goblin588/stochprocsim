@@ -1,5 +1,4 @@
-# src/solve_state_angles.py
-#%%
+import re
 
 import numpy as np
 from scipy.optimize import differential_evolution
@@ -8,24 +7,17 @@ from stochprocsim.Libraries.OpticsLib import HWP_p2, QWP_p2
 from stochprocsim.Models.CausalModels import Causal_Models
 
 INPUT = np.array([[1], [0], [0], [0]], dtype=complex)
-
 BOUNDS = [(0, 360), (0, 180)]
 
 
 def to_numpy(state) -> np.ndarray:
-    """
-    Convert a state vector to a complex numpy column vector,
-    handling both numpy arrays and SymPy matrices.
-    """
+    """Convert a state vector to a complex numpy array (handles SymPy or numpy input)."""
     try:
-        # SymPy matrix: .tolist() gives a nested list of SymPy expressions;
-        # complex() forces each element to a Python complex number.
         return np.array(
             [[complex(v) for v in row] for row in state.tolist()],
-            dtype=complex
+            dtype=complex,
         )
     except AttributeError:
-        # Already a numpy array or similar
         return np.asarray(state, dtype=complex)
 
 
@@ -46,8 +38,7 @@ def objective(x, target: np.ndarray) -> float:
 
 
 def solve_state(target_state, seed=0):
-    target = to_numpy(target_state)  # safe conversion regardless of source type
-
+    target = to_numpy(target_state)
     result = differential_evolution(
         objective,
         bounds=BOUNDS,
@@ -58,94 +49,67 @@ def solve_state(target_state, seed=0):
         popsize=10,
         tol=1e-9,
     )
-
     θ_hwp, θ_qwp = result.x
-    angles = {"θhwp": θ_hwp, "θqwp": θ_qwp}
-    fid = 1.0 - result.fun
-    return angles, fid
+    return {"θhwp": θ_hwp, "θqwp": θ_qwp}, 1.0 - result.fun
 
 
 def phase_align(psi: np.ndarray, target: np.ndarray) -> np.ndarray:
-    """
-    Rotate psi by the global phase that minimises the angle to target,
-    i.e. make ⟨target|psi⟩ real and positive.
-    """
+    """Rotate psi by the global phase that makes ⟨target|psi⟩ real and positive."""
     psi_n = psi.flatten() / np.linalg.norm(psi)
     target_n = target.flatten() / np.linalg.norm(target)
-    overlap = np.vdot(target_n, psi_n)   # ⟨target|psi⟩ = r·e^{iφ}
+    overlap = np.vdot(target_n, psi_n)
     return psi * np.exp(-1j * np.angle(overlap))
 
 
-# if __name__ == "__main__":
-    # s0_states = [model.states[0] for model in Causal_Models.values()]
-    # for n, state in enumerate(s0_states):
-    #     angles, F = solve_state(state)
-    #     target_np = to_numpy(state)
-    #     found     = build_state([angles["θqwp"], angles["θhwp"]])
-    #     found_aligned = phase_align(found, target_np)
-
-    #     print(f"── N: {n+3} ──────────────────────────")
-    #     print(f"  θ_QWP = {angles['θqwp']:7.3f}°   θ_HWP = {angles['θhwp']:7.3f}°")
-    #     print(f"  Fidelity : {F:.10f}")
-    #     if F < 0.9999:
-    #         print("  *** WARNING: low fidelity — target may not be reachable with this optics chain ***")
-    #     print(f"  Target  : {target_np.flatten()}")
-    #     print(f"  Found   : {found_aligned.flatten()}")
-    #     print()
-
-import numpy as np
-import re
-
 def parse_mathematica(s: str) -> np.ndarray:
-    """
-    Parse a Mathematica column vector
-    """
+    """Parse a Mathematica-format column vector string into a numpy array."""
     s = s.replace(" ", "").replace("I", "j")
     entries = re.findall(r'\{([^{}]*)\}', s)
-    values = []
-    for e in entries:
-        e = e.strip()
-        values.append(complex(e) if e and e != '0' else 0+0j)
+    values = [complex(e) if e and e != '0' else 0+0j for e in entries]
     return np.array(values, dtype=complex)
+
 
 def compare_states(psi_a: np.ndarray, psi_b: np.ndarray):
     psi_a = psi_a / np.linalg.norm(psi_a)
     psi_b = psi_b / np.linalg.norm(psi_b)
-
-    fidelity = abs(np.vdot(psi_a, psi_b)) ** 2
-    overlap  = np.vdot(psi_a, psi_b)
-    phase    = np.angle(overlap)
+    fid = abs(np.vdot(psi_a, psi_b)) ** 2
+    phase = np.angle(np.vdot(psi_a, psi_b))
     psi_b_aligned = psi_b * np.exp(-1j * phase)
-    distance = np.linalg.norm(psi_a - psi_b_aligned)
-
-    print(f"Fidelity |<a|b>|²     : {fidelity:.10f}")
+    print(f"Fidelity |<a|b>|²     : {fid:.10f}")
     print(f"Global phase diff     : {np.rad2deg(phase):.4f}°")
-    print(f"Distance (post-align) : {distance:.2e}")
+    print(f"Distance (post-align) : {np.linalg.norm(psi_a - psi_b_aligned):.2e}")
     print(f"psi_a                 : {np.round(psi_a, 6)}")
     print(f"psi_b (aligned)       : {np.round(psi_b_aligned, 6)}")
-    print("✅ Equal up to global phase" if fidelity > 0.9999 else f"❌ States differ — fidelity {fidelity:.6f}")
+    print("Equal up to global phase" if fid > 0.9999 else f"States differ — fidelity {fid:.6f}")
 
-# ── Paste here ────────────────────────────────────────────────────────────────
-s0_states = [model.states[0] for model in Causal_Models.values()]
-n=3
-state = s0_states[n-3]
-angles, F = solve_state(state)
-target_np = to_numpy(state)
-found = build_state([angles["θhwp"], angles["θqwp"]])
-found_aligned = phase_align(found, target_np)
 
-print(f"── N: {n} ──────────────────────────")
-print(f"  θ_QWP = {angles['θqwp']:7.3f}°   θ_HWP = {angles['θhwp']:7.3f}°")
-print(f"  Fidelity : {F:.10f}")
-if F < 0.9999:
-    print("  *** WARNING: low fidelity — target may not be reachable with this optics chain ***")
-# print(f"  Target  : {target_np.flatten()}")
-# print(f"  Found   : {found_aligned.flatten()}")
+if __name__ == "__main__":
+    s0_states = [model.states[0] for model in Causal_Models.values()]
 
-python_state = found_aligned.flatten()
+    # Solve all states
+    for n, state in enumerate(s0_states):
+        angles, F = solve_state(state)
+        target_np = to_numpy(state)
+        found = build_state([angles["θhwp"], angles["θqwp"]])
+        found_aligned = phase_align(found, target_np)
+        print(f"── N: {n+3} ──────────────────────────")
+        print(f"  θ_HWP = {angles['θhwp']:7.3f}°   θ_QWP = {angles['θqwp']:7.3f}°")
+        print(f"  Fidelity : {F:.10f}")
+        if F < 0.9999:
+            print("  *** WARNING: low fidelity ***")
+        print(f"  Found   : {found_aligned.flatten()}")
+        print()
 
-mathematica_state = parse_mathematica(
-    "{{0.470057 - 0.29022 I}, {0}, {0.528248 - 0.644804 I}, {0}}"
-)
+    # Compare a specific state against a Mathematica reference
+    n = 6
+    state = s0_states[n - 3]
+    angles, F = solve_state(state)
+    target_np = to_numpy(state)
+    found = build_state([angles["θhwp"], angles["θqwp"]])
+    found_aligned = phase_align(found, target_np)
 
-compare_states(python_state, mathematica_state)
+    mathematica_state = parse_mathematica(
+        "{{0.138555 - 0.655664 I}, {0}, {0.693399 - 0.264772 I}, {0}}"
+    )
+    print(f"\n── N={n} vs Mathematica ──────────────────────────")
+    compare_states(found_aligned.flatten(), mathematica_state)

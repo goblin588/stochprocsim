@@ -1,178 +1,140 @@
 """
-Library for all mathematical definitions of optics 
+Optics component matrices in NTU mode convention.
 
+Mode ordering (NTU): indices [0,1,2,3] = [path1_H, path2_H, path1_V, path2_V]
+  - path1 polarisation lives at indices 1, 3
+  - path2 polarisation lives at indices 0, 2
+
+GU convention reorders to [1, 3, 0, 2]. Use ntu_to_gu() / gu_to_ntu() to
+convert unitaries between the two when interfacing with the experimental setup.
 """
 
 import numpy as np
 
-flipped = False
-
 ROUND_TO = 8
 
-## Maths ##
-
-def overlap(psi, basis):
-    """
-    Checks the overlap of psi on the basis state 'basis'
-    """
-    return np.square(np.abs(np.transpose(np.conjugate(psi))@basis))
+# Permutation that maps NTU indices to GU indices
+_GU_PERM = np.array([1, 3, 0, 2])
+_NTU_PERM = np.argsort(_GU_PERM)   # inverse: GU → NTU
 
 
-## 2X2 Components ##
-def HWP(theta):
+def ntu_to_gu(U: np.ndarray) -> np.ndarray:
+    """Convert a 4×4 unitary from NTU to GU mode ordering."""
+    return U[np.ix_(_GU_PERM, _GU_PERM)]
+
+
+def gu_to_ntu(U: np.ndarray) -> np.ndarray:
+    """Convert a 4×4 unitary from GU to NTU mode ordering."""
+    return U[np.ix_(_NTU_PERM, _NTU_PERM)]
+
+
+# ── 2×2 single-path components ────────────────────────────────────────────────
+
+def overlap(psi: np.ndarray, basis: np.ndarray) -> float:
+    """Compute |⟨basis|psi⟩|²."""
+    return float(np.square(np.abs(np.conj(basis) @ psi)))
+
+
+def HWP(theta: float) -> np.ndarray:
     theta = np.deg2rad(theta)
-    return (-1j)*np.array([[np.round(np.cos(2*theta),ROUND_TO),np.round(np.sin(2*theta),ROUND_TO)],
-                           [np.round(np.sin(2*theta),ROUND_TO),np.round(-1*np.cos(2*theta),ROUND_TO)]])
+    c, s = np.round(np.cos(2*theta), ROUND_TO), np.round(np.sin(2*theta), ROUND_TO)
+    return (-1j) * np.array([[c, s], [s, -c]])
 
-def QWP(theta):
+
+def QWP(theta: float) -> np.ndarray:
     theta = np.deg2rad(theta)
-    return (1/np.sqrt(2))*np.array([[np.round(1-(1j*np.cos(2*theta)),ROUND_TO),np.round(-1j*np.sin(2*theta),ROUND_TO)],
-                                    [np.round(-1j*np.sin(2*theta),ROUND_TO),np.round(1+1j*np.cos(2*theta),ROUND_TO)]])
-
-def Mirror2(phi):
-    # ASSUMING PHI RELATIVE PHASE SHIFT IN RADIANS
-    m = np.array([[1,0],
-        [0,np.exp(1j*phi)]])
-    return m 
-
-## 4X4 Components##
-if flipped == True:
-    def M4(phi, phi2):
-        # ASSUMING PHI RELATIVE PHASE SHIFT IN RADIANS
-        m = np.array([[1,0,0,0],
-            [0,np.exp(1j*phi),0,0],
-            [0,0,1,0],
-            [0,0,0,np.exp(1j*phi2)]])
-        return m 
-
-    def HWP_p1(theta):
-        theta = np.deg2rad(theta)
-        return (-1j)*np.array([[np.round(np.cos(2*theta),ROUND_TO),np.round(np.sin(2*theta),ROUND_TO),0,0],[np.round(np.sin(2*theta),ROUND_TO),np.round(-1*np.cos(2*theta),ROUND_TO),0,0],
-                               [0,0,1j,0],[0,0,0,1j]])
-
-    def HWP_p2(theta):
-        theta = np.deg2rad(theta)
-        return (-1j)*np.array([[1j,0,0,0],[0,1j,0,0],
-                                [0,0,np.round(np.cos(2*theta),ROUND_TO),np.round(np.sin(2*theta),ROUND_TO)],[0,0,np.round(np.sin(2*theta),ROUND_TO),np.round(-1*np.cos(2*theta),ROUND_TO)]])
-
-    def QWP_p1(theta):
-        theta = np.deg2rad(theta)
-        return (1/np.sqrt(2))*np.array([[np.round(1-(1j*np.cos(2*theta)),ROUND_TO),np.round(-1j*np.sin(2*theta),ROUND_TO),0,0],[np.round(-1j*np.sin(2*theta),ROUND_TO),np.round(1+1j*np.cos(2*theta),ROUND_TO),0,0],
-                                        [0,0,np.sqrt(2),0],[0,0,0,np.sqrt(2)]])
-
-    def QWP_p2(theta):    
-        theta = np.deg2rad(theta)
-        return (1/np.sqrt(2))*np.array([[np.sqrt(2),0,0,0],[0,np.sqrt(2),0,0],
-                                          [0,0,np.round(1-(1j*np.cos(2*theta)),ROUND_TO),np.round(-1j*np.sin(2*theta),ROUND_TO)],[0,0,np.round(-1j*np.sin(2*theta),ROUND_TO),np.round(1+(1j*np.cos(2*theta)),ROUND_TO)]])
-
-    PBS = np.array(
-                [[1,0,0,0],
-                [0,0,0,1j],
-                [0,0,1,0],
-                [0,1j,0,0]])
-else:
-    ##### NTU MODES
-    PBS = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1j],
-            [0, 0, 1j, 0]
-        ], dtype=complex)
-
-    def M4(theta1, theta2):
-        return np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, np.exp(1j * theta2), 0],
-            [0, 0, 0, np.exp(1j * theta1)]
-        ], dtype=complex)
-
-    def HWP_p2(theta):
-        theta = np.deg2rad(theta)
-        c = np.cos(2 * theta)
-        s = np.sin(2 * theta)
-        return (-1j) * np.array([
-            [c, 0, s, 0],
-            [0, 1j, 0, 0],
-            [s, 0, -c, 0],
-            [0, 0, 0, 1j]
-        ], dtype=complex)
+    c, s = np.round(np.cos(2*theta), ROUND_TO), np.round(np.sin(2*theta), ROUND_TO)
+    return (1/np.sqrt(2)) * np.array([[1 - 1j*c, -1j*s], [-1j*s, 1 + 1j*c]])
 
 
-    def HWP_p1(theta):
-        theta = np.deg2rad(theta)
-        c = np.cos(2 * theta)
-        s = np.sin(2 * theta)
-        return (-1j) * np.array([
-            [1j, 0, 0, 0],
-            [0, c, 0, s],
-            [0, 0, 1j, 0],
-            [0, s, 0, -c]
-        ], dtype=complex)
-
-    def QWP_p1(theta):
-        theta = np.deg2rad(theta)
-        c = np.cos(2 * theta)
-        s = np.sin(2 * theta)
-        return (1 / np.sqrt(2)) * np.array([
-            [np.sqrt(2), 0, 0, 0],
-            [0, 1 - 1j * c, 0, -1j * s],
-            [0, 0, np.sqrt(2), 0],
-            [0, -1j * s, 0, 1 + 1j * c]
-        ], dtype=complex)
+def Mirror2(phi: float) -> np.ndarray:
+    return np.array([[1, 0], [0, np.exp(1j*phi)]])
 
 
-    def QWP_p2(theta):
-        theta = np.deg2rad(theta)
-        c = np.cos(2 * theta)
-        s = np.sin(2 * theta)
-        return (1 / np.sqrt(2)) * np.array([
-            [1 - 1j * c, 0, -1j * s, 0],
-            [0, np.sqrt(2), 0, 0],
-            [-1j * s, 0, 1 + 1j * c, 0],
-            [0, 0, 0, np.sqrt(2)]
-        ], dtype=complex)
+# ── 4×4 two-path components (NTU convention) ──────────────────────────────────
 
-#####
-PBS_dag = np.conjugate(np.transpose(PBS))
+PBS = np.array([
+    [1, 0,  0,   0  ],
+    [0, 1,  0,   0  ],
+    [0, 0,  0,   1j ],
+    [0, 0,  1j,  0  ],
+], dtype=complex)
 
-def getUtot(angles):
-    """ 
-    Returns 4x4 Unitary Matrix.
-    Input: input angles: will default to 0 if not explicitly set.
+PBS_dag = PBS.conj().T
 
-    """
-    QWPf12 = QWP_p2(angles['θqf2'])
 
-    HWPf2 = HWP_p2(angles['θhf2'])
+def M4(theta1: float, theta2: float) -> np.ndarray:
+    return np.array([
+        [1, 0, 0,                    0                  ],
+        [0, 1, 0,                    0                  ],
+        [0, 0, np.exp(1j * theta2),  0                  ],
+        [0, 0, 0,                    np.exp(1j * theta1)],
+    ], dtype=complex)
 
-    QWPf1= QWP_p1(angles['θqf1'])
 
-    HWPf = HWP_p1(angles['θhf1']) 
+def HWP_p1(theta: float) -> np.ndarray:
+    """HWP acting on path-1 polarisation (indices 1,3)."""
+    theta = np.deg2rad(theta)
+    c, s = np.cos(2*theta), np.sin(2*theta)
+    return (-1j) * np.array([
+        [1j, 0,  0,  0 ],
+        [0,  c,  0,  s ],
+        [0,  0,  1j, 0 ],
+        [0,  s,  0,  -c],
+    ], dtype=complex)
 
-    HWP12 = HWP_p2(angles['θh2'])
 
-    QWP12 = QWP_p2(angles['θq2'])
+def HWP_p2(theta: float) -> np.ndarray:
+    """HWP acting on path-2 polarisation (indices 0,2)."""
+    theta = np.deg2rad(theta)
+    c, s = np.cos(2*theta), np.sin(2*theta)
+    return (-1j) * np.array([
+        [c,  0,  s,  0 ],
+        [0,  1j, 0,  0 ],
+        [s,  0,  -c, 0 ],
+        [0,  0,  0,  1j],
+    ], dtype=complex)
 
-    HWP1 = HWP_p1(angles['θh1'])
 
-    QWP1 = QWP_p1(angles['θq1'])
-    
-    QWPin12= QWP_p2(angles['θqin2'])
+def QWP_p1(theta: float) -> np.ndarray:
+    """QWP acting on path-1 polarisation (indices 1,3)."""
+    theta = np.deg2rad(theta)
+    c, s = np.cos(2*theta), np.sin(2*theta)
+    return (1/np.sqrt(2)) * np.array([
+        [np.sqrt(2), 0,          0,          0         ],
+        [0,          1 - 1j*c,   0,          -1j*s     ],
+        [0,          0,          np.sqrt(2), 0         ],
+        [0,          -1j*s,      0,          1 + 1j*c  ],
+    ], dtype=complex)
 
-    HWPin2 = HWP_p2(angles['θhin2'])
 
-    M3 = M4(angles['Φm3'], angles['Φm1'])
-       
-    M2 = M4(angles['Φm2'], angles['Φm2'])
-    
-    M1 = M4(angles['Φm1'],angles['Φm3'])
+def QWP_p2(theta: float) -> np.ndarray:
+    """QWP acting on path-2 polarisation (indices 0,2)."""
+    theta = np.deg2rad(theta)
+    c, s = np.cos(2*theta), np.sin(2*theta)
+    return (1/np.sqrt(2)) * np.array([
+        [1 - 1j*c,  0,          -1j*s,      0         ],
+        [0,         np.sqrt(2), 0,          0         ],
+        [-1j*s,     0,          1 + 1j*c,   0         ],
+        [0,         0,          0,          np.sqrt(2)],
+    ], dtype=complex)
 
+
+# ── Full loop unitary ──────────────────────────────────────────────────────────
+
+def getUtot(angles: dict) -> np.ndarray:
+    """Build the 4×4 loop unitary from a waveplate angle dictionary (NTU convention)."""
     p = angles['pipi']
-
-    # M0 = M4(angles['Φm0'], angles['Φm0'])
-
-    # U = HWPf2@QWPf12@HWPf@QWPf1@PBS_dag@M3@M2@M1@HWP12@QWP12@HWP1@QWP1@PBS
-    U = np.exp(-1j*p)*(HWPf2@QWPf12@HWPf@QWPf1@PBS_dag@M3@M2@M1@HWP12@QWP12@HWP1@QWP1@PBS@HWPin2@QWPin12)
-    
-    return U
+    U = (
+        HWP_p2(angles['θhf2']) @ QWP_p2(angles['θqf2'])
+        @ HWP_p1(angles['θhf1']) @ QWP_p1(angles['θqf1'])
+        @ PBS_dag
+        @ M4(angles['Φm3'], angles['Φm1'])
+        @ M4(angles['Φm2'], angles['Φm2'])
+        @ M4(angles['Φm1'], angles['Φm3'])
+        @ HWP_p2(angles['θh2']) @ QWP_p2(angles['θq2'])
+        @ HWP_p1(angles['θh1']) @ QWP_p1(angles['θq1'])
+        @ PBS
+        @ HWP_p2(angles['θhin2']) @ QWP_p2(angles['θqin2'])
+    )
+    return np.exp(-1j * p) * U

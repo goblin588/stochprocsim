@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 import os 
 
-from ..CausalModels import *
+from ..Models.CausalModels import *
 from .OpticsLib import *
 
 # Define symbols only for convenience
