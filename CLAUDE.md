@@ -52,12 +52,12 @@ demos/
 
 ## Mode conventions
 
-The 4×4 unitary acts on two paths × two polarisations. Two mode orderings exist:
+The 4×4 unitary acts on two paths × two polarisations. **NTU is the sole convention** (Phase 3 complete):
 
-- **NTU** (current default, `flipped=False`): path2 modes at indices 0,2; path1 at 1,3
-- **GU** (`flipped=True`): path modes flipped
+- **NTU**: path2 polarisation at indices [0, 2]; path1 at [1, 3]
+- **GU**: the permutation [1, 3, 0, 2] applied to rows and columns
 
-`flipped` is a global boolean in `OpticsLib.py` that switches both the 4×4 component definitions (HWP_p1, HWP_p2, QWP_p1, QWP_p2, PBS, M4) and the model instantiation logic in `CausalModels.py`. Currently always `False`.
+The `flipped` global has been removed. `OpticsLib.py` now exports `ntu_to_gu(U)` and `gu_to_ntu(U)` for interfacing with the experimental setup when needed.
 
 ---
 
@@ -130,3 +130,46 @@ The core issues are: (a) SymPy used for pure numerical linear algebra, (b) globa
 - Move `FindWaveplateAngles.py` to `demos/` or `scripts/`
 - Delete `ClassicalTransitionModel`
 - Remove commented-out code
+
+---
+
+## Current status (as of 2026-06-20)
+
+### Completed
+
+**Phase 1 – Correctness fixes** ✓
+- `CausalModel.__getattr__` recursion guard added
+- Duplicate GU angle dicts removed from `WaveplateAngles.py`
+- `GenerateGaussianUnitaries.py` import path fixed (`..Models.CausalModels`)
+- `Simulator.save()` fixed (was referencing non-existent attributes)
+- Duplicate `self.angles_GU` assignment removed from `CausalModel.__init__`
+- `ClassicalTransitionModel` dead code deleted
+- `PlotSamples.py` converted from script-at-import to proper importable module
+- `FindWaveplateAngles.py` script code wrapped in `if __name__ == "__main__"`; duplicate `import numpy as np` removed
+
+**Phase 2 – Numerical performance** ✓
+- All `sp.Matrix` data in `Unitaries.py` converted to `np.ndarray(dtype=complex)`
+- `QuantumTransitionModel.get_output_probabilities` now uses numpy slicing and `np.linalg.norm`
+- All sympy imports removed from package source files
+- Verified: max numerical diff vs original = 0.00e+00 for all 4 unitaries and 22 state vectors
+
+**Phase 3 – Mode convention** ✓
+- `flipped` global removed from `OpticsLib.py` and `CausalModels.py`
+- NTU is the sole backend convention; `ntu_to_gu()` / `gu_to_ntu()` added for experimental interfacing
+- `CausalModels.py` no longer has a `flipped` import or conditional instantiation block
+
+**Demo cleanup** ✓
+- All demos: removed unused imports (`sympy`, `math`), commented-out blocks, debug print statements
+- `demo.py`: `is_unitary` rewritten as `np.allclose` one-liner; removed unused `w`, `y_qopt`, `qopt_yerr`
+- `kl_divergence.py`: `getOutput` converted to numpy; `str` variable renamed to `seq`; dead sympy matrix cell removed; imports trimmed to only what's used
+- `QuantumDivergenceExample.py`: hardcoded sympy `U_3` / states replaced with `from stochprocsim.Models.Unitaries import U_3, U_3_states`
+- `error_model.py`: loop variable renamed `__N` → `_N` (marimo private-variable convention to avoid duplicate-definition error across cells)
+
+### Still outstanding
+
+- **`_backend.py`** still imports `torch` unconditionally (not in deps) — dead code, safe to delete
+- **GU angle dicts** (`U_N_angles_GU`) are currently identical to NTU dicts — placeholder values; correct GU-optimised angles needed when available
+- **`generate_quantum_model()`** still duplicated across `demo.py`, `error_model.py`, `propagating_state.py` — Phase 4 deferred
+- **Module-level singletons** (`CS_3`–`CS_6`, `Causal_Models`) still instantiated at import time — Phase 4 deferred
+- **`FindWaveplateAngles.py`** still lives in `src/` rather than `demos/` or `scripts/`
+- **`CausalModel.__len__`** returning `len(states) - 1` is still undocumented
