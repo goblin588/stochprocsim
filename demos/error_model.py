@@ -8,30 +8,24 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import numpy as np
-    import sympy as sp
-    import matplotlib.pyplot as plt 
-    import math 
-    import time 
+    import matplotlib.pyplot as plt
+    import time
 
     from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.stochprocq.Models.renewal import RenewalProcess
     from stochprocsim.stochprocq.measure import eval_diverge
     from stochprocsim.Models.SimulationSampler import Simulator
-    from stochprocsim.Models.TransitionModel import QuantumTransitionModel, ExactTransitionModel, TransitionModel
+    from stochprocsim.Models.TransitionModel import QuantumTransitionModel
     from stochprocsim.Models.CausalModels import Causal_Models
     from stochprocsim.Libraries.OpticsLib import getUtot
 
     def generate_quantum_model(exp_data:np.array) -> RenewalProcess:
-        # Reset probabilities (emitting 1) after k steps starting from state 0 are:
-        q_emit = exp_data ## EXPERIEMTNATL DATA GO HERE
-
-        # probability of emitting 0 at each causal state:
+        q_emit = exp_data
         q_survive_st = np.zeros_like(q_emit)
         q_survive_st[0] = q_emit[0]
         for i in range(1, len(q_emit)):
             q_survive_st[i] = (q_emit[i] / np.prod(1 - q_survive_st[:i]))
-
-        return RenewalProcess([1-q for q in q_survive_st[:-1]]) # the last state always emit 1
+        return RenewalProcess([1-q for q in q_survive_st[:-1]])
     return (
         Causal_Models,
         QuantumTransitionModel,
@@ -70,7 +64,7 @@ def _(
 
         sampled_counts = q_sim.sample_counts(print_outputs=False)
 
-        loop_sample_vals = [row[1] for row in sampled_counts] 
+        loop_sample_vals = [row[1] for row in sampled_counts]
         res = [val / n for val in loop_sample_vals]
 
         exact_model = get_uniform_renewal(N - 1)
@@ -105,7 +99,7 @@ def _(
 
     samples = 100
 
-    for N in range(3,6+1):
+    for N in range(3, 6+1):
         poisson(N, samples)
         time.sleep(1)
     return sample_poisson_KL, samples
@@ -139,18 +133,18 @@ def _(
         return (
             gaussian_values(np.deg2rad(angles['θhin2']), sigma),
             gaussian_values(np.deg2rad(angles['θqin2']), sigma),
-            gaussian_values(np.deg2rad(angles['θh1']), sigma),        
+            gaussian_values(np.deg2rad(angles['θh1']), sigma),
             gaussian_values(np.deg2rad(angles['θq1']), sigma),
             gaussian_values(np.deg2rad(angles['θh2']), sigma),
             gaussian_values(np.deg2rad(angles['θq2']), sigma),
-            gaussian_values(np.deg2rad(angles['θhf2']), sigma),        
+            gaussian_values(np.deg2rad(angles['θhf2']), sigma),
             gaussian_values(np.deg2rad(angles['θqf2']), sigma),
-            gaussian_values(np.deg2rad(angles['θhf1']), sigma),        
+            gaussian_values(np.deg2rad(angles['θhf1']), sigma),
             gaussian_values(np.deg2rad(angles['θqf1']), sigma)
             )
 
     def sample_gauss_U(cm):
-        hin2, qin2, h1, q1, h2, q2, hf2, qf2, hf1, qf1 = gen_gauss_optics(cm.angles_NTU) 
+        hin2, qin2, h1, q1, h2, q2, hf2, qf2, hf1, qf1 = gen_gauss_optics(cm.angles_NTU)
         angles = {
             "θh1": np.rad2deg(h1),
             "θq1": np.rad2deg(q1),
@@ -167,7 +161,6 @@ def _(
             "Φm2": 3.77,
             "Φm3": 3.74
         }
-        # print(angles)
         return getUtot(angles)
 
 
@@ -184,7 +177,6 @@ def _(
             U = sample_gauss_U(cm)
             cm.set_U(U)
             time.sleep(1)
-            # print(U)
 
             kl_vals = sample_poisson_KL(cm, n)
             all_kl.append(np.mean(kl_vals))
@@ -195,8 +187,8 @@ def _(
             f"{all_kl.mean()} +/- {all_kl.std()}"
         )
 
-    for __N in range(3,6+1):
-        gauss_poiss_divergence(__N, samples)
+    for N in range(3, 6+1):
+        gauss_poiss_divergence(N, samples)
     return
 
 

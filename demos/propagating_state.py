@@ -8,27 +8,22 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import numpy as np
-    import sympy as sp
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 
     from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.stochprocq.Models.renewal import RenewalProcess
     from stochprocsim.stochprocq.measure import eval_diverge
     from stochprocsim.Models.SimulationSampler import Simulator
-    from stochprocsim.Models.TransitionModel import QuantumTransitionModel, ExactTransitionModel, TransitionModel
+    from stochprocsim.Models.TransitionModel import QuantumTransitionModel, ExactTransitionModel
     from stochprocsim.Models.CausalModels import Causal_Models
 
     def generate_quantum_model(exp_data:np.array) -> RenewalProcess:
-        # Reset probabilities (emitting 1) after k steps starting from state 0 are:
-        q_emit = exp_data ## EXPERIEMTNATL DATA GO HERE
-
-        # probability of emitting 0 at each causal state:
+        q_emit = exp_data
         q_survive_st = np.zeros_like(q_emit)
         q_survive_st[0] = q_emit[0]
         for i in range(1, len(q_emit)):
             q_survive_st[i] = (q_emit[i] / np.prod(1 - q_survive_st[:i]))
-
-        return RenewalProcess([1-q for q in q_survive_st[:-1]]) # the last state always emit 1
+        return RenewalProcess([1-q for q in q_survive_st[:-1]])
     return (
         Causal_Models,
         ExactTransitionModel,
@@ -52,7 +47,7 @@ def _(
     plt,
 ):
     N = 4
-    exact_model = get_uniform_renewal(N-1) # 3 causal states
+    exact_model = get_uniform_renewal(N-1)
 
     CS = Causal_Models[N]
     CS.set_U(CS.U_theo)
@@ -62,11 +57,8 @@ def _(
     data = data * (1/(1-CS.loop_loss))
     data_theory = qq_sim.get_output_distribution_exp()
 
-    print(1/(1-CS.loop_loss))
-
     x = np.arange(1, len(data) + 1)
 
-    # experimental bars
     plt.bar(
         x,
         data,
@@ -75,7 +67,6 @@ def _(
         label="With Noise"
     )
 
-    # theory bars (outline only, dotted)
     plt.bar(
         x,
         data_theory,
