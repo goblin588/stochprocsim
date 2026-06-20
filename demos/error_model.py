@@ -99,8 +99,8 @@ def _(
 
     samples = 100
 
-    for N in range(3, 6+1):
-        poisson(N, samples)
+    for _N in range(3, 6+1):
+        poisson(_N, samples)
         time.sleep(1)
     return sample_poisson_KL, samples
 
@@ -187,8 +187,8 @@ def _(
             f"{all_kl.mean()} +/- {all_kl.std()}"
         )
 
-    for N in range(3, 6+1):
-        gauss_poiss_divergence(N, samples)
+    for _N in range(3, 6+1):
+        gauss_poiss_divergence(_N, samples)
     return
 
 
