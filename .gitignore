@@ -26,4 +26,5 @@ build/
 .idea/
 
 # OS
-.DS_StoreCLAUDE.md
+.DS_Store
+CLAUDE.md
