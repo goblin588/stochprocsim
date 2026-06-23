@@ -114,7 +114,7 @@ def _(N, counts, np, plt):
 
 @app.cell
 def _(N, np):
-    from stochprocsim.Models.CausalModels import Causal_Models
+    from stochprocsim.models.causal_models import Causal_Models
 
     _CS = Causal_Models[N]
     _U  = _CS.U_theo

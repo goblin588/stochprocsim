@@ -10,7 +10,7 @@ def _():
     import numpy as np
 
     from stochprocsim.stochprocq import get_uniform_renewal
-    from stochprocsim.Models.CausalModels import Causal_Models
+    from stochprocsim.models.causal_models import Causal_Models
 
     return Causal_Models, get_uniform_renewal, mo, np
 

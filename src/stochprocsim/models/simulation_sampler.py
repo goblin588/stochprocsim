@@ -1,8 +1,8 @@
 import numpy as np
 import math
 
-from .CausalModels import *
-from .TransitionModel import QuantumTransitionModel, ExactTransitionModel, TransitionModel
+from .causal_models import *
+from .transition_model import QuantumTransitionModel, ExactTransitionModel, TransitionModel
 
 
 def _split_paths(v: np.ndarray):

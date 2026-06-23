@@ -1,5 +1,5 @@
 import numpy as np
-from stochprocsim.stochprocq.Models.renewal import RenewalProcess
+from stochprocsim.stochprocq.models.renewal import RenewalProcess
 
 
 def generate_quantum_model(output_distribution) -> RenewalProcess:

@@ -2,8 +2,8 @@ import numpy as np
 import itertools
 import os
 
-from stochprocsim.Models.CausalModels import CS_3
-from stochprocsim.Libraries.OpticsLib import HWP_p1, HWP_p2, QWP_p1, QWP_p2, PBS, M4
+from stochprocsim.models.causal_models import CS_3
+from stochprocsim.libraries.optics_lib import HWP_p1, HWP_p2, QWP_p1, QWP_p2, PBS, M4
 
 np.random.seed(42)
 Nsamples = 5

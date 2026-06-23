@@ -10,7 +10,7 @@ def _():
     import numpy as np
 
     from stochprocsim.stochprocq import get_uniform_renewal
-    from stochprocsim.stochprocq.Models.renewal import RenewalProcess
+    from stochprocsim.stochprocq.models.renewal import RenewalProcess
     from stochprocsim.stochprocq.measure import eval_diverge
     return RenewalProcess, eval_diverge, get_uniform_renewal, mo, np
 
@@ -59,7 +59,7 @@ def _(mo):
 
 @app.cell
 def _(N, np):
-    from stochprocsim.Models.Unitaries import U_3, U_3_states
+    from stochprocsim.models.unitaries import U_3, U_3_states
 
     a_prod = 1
     res = []

@@ -13,10 +13,10 @@ def _():
 
     from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.stochprocq.measure import eval_diverge
-    from stochprocsim.Models.SimulationSampler import Simulator
-    from stochprocsim.Models.TransitionModel import QuantumTransitionModel
-    from stochprocsim.Models.CausalModels import Causal_Models
-    from stochprocsim.Libraries.OpticsLib import getUtot
+    from stochprocsim.models.simulation_sampler import Simulator
+    from stochprocsim.models.transition_model import QuantumTransitionModel
+    from stochprocsim.models.causal_models import Causal_Models
+    from stochprocsim.libraries.optics_lib import getUtot
     from stochprocsim.utils import generate_quantum_model
     return (
         Causal_Models,

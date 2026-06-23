@@ -2,7 +2,7 @@
 StochProcQ: A Python package for stochastic processes and queueing theory.
 """
 
-from .Models.renewal import get_uniform_renewal, get_bio_renewal
+from .models.renewal import get_uniform_renewal, get_bio_renewal
 from .hmm import HiddenMarkovModel, MPS
 
 def main():

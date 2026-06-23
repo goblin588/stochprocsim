@@ -3,8 +3,8 @@ import re
 import numpy as np
 from scipy.optimize import differential_evolution
 
-from stochprocsim.Libraries.OpticsLib import HWP_p2, QWP_p2
-from stochprocsim.Models.CausalModels import Causal_Models
+from stochprocsim.libraries.optics_lib import HWP_p2, QWP_p2
+from stochprocsim.models.causal_models import Causal_Models
 
 INPUT = np.array([[1], [0], [0], [0]], dtype=complex)
 BOUNDS = [(0, 360), (0, 180)]

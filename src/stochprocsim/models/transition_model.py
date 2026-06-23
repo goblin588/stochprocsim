@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from .CausalModels import Causal_Models
+from .causal_models import Causal_Models
 
 
 class TransitionModel:

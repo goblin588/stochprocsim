@@ -1,7 +1,7 @@
 import numpy as np
-from ..Libraries.OpticsLib import getUtot
-from .Unitaries import *
-from .WaveplateAngles import *
+from ..libraries.optics_lib import getUtot
+from .unitaries import *
+from .waveplate_angles import *
 
 class CausalModel():
     def __init__(self, U, states:list, angles_NTU, angles_GU, name=None, transmission: float = 1.0):
