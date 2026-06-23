@@ -9,9 +9,7 @@ The code computes steady state modelling, error propagation and KL divergence ra
 ## Installation
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+uv sync
 ```
 
 ## Package structure
