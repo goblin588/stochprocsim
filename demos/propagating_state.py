@@ -11,19 +11,11 @@ def _():
     import matplotlib.pyplot as plt
 
     from stochprocsim.stochprocq import get_uniform_renewal
-    from stochprocsim.stochprocq.Models.renewal import RenewalProcess
     from stochprocsim.stochprocq.measure import eval_diverge
     from stochprocsim.Models.SimulationSampler import Simulator
     from stochprocsim.Models.TransitionModel import QuantumTransitionModel, ExactTransitionModel
     from stochprocsim.Models.CausalModels import Causal_Models
-
-    def generate_quantum_model(exp_data:np.array) -> RenewalProcess:
-        q_emit = exp_data
-        q_survive_st = np.zeros_like(q_emit)
-        q_survive_st[0] = q_emit[0]
-        for i in range(1, len(q_emit)):
-            q_survive_st[i] = (q_emit[i] / np.prod(1 - q_survive_st[:i]))
-        return RenewalProcess([1-q for q in q_survive_st[:-1]])
+    from stochprocsim.utils import generate_quantum_model
     return (
         Causal_Models,
         ExactTransitionModel,
