@@ -11,14 +11,7 @@ BOUNDS = [(0, 360), (0, 180)]
 
 
 def to_numpy(state) -> np.ndarray:
-    """Convert a state vector to a complex numpy array (handles SymPy or numpy input)."""
-    try:
-        return np.array(
-            [[complex(v) for v in row] for row in state.tolist()],
-            dtype=complex,
-        )
-    except AttributeError:
-        return np.asarray(state, dtype=complex)
+    return np.asarray(state, dtype=complex)
 
 
 def fidelity(psi: np.ndarray, target: np.ndarray) -> float:
@@ -30,7 +23,7 @@ def fidelity(psi: np.ndarray, target: np.ndarray) -> float:
 
 def build_state(x) -> np.ndarray:
     θ_hwp, θ_qwp = x
-    return HWP_p2(θ_hwp) @ QWP_p2(θ_qwp) @ INPUT
+    return QWP_p2(θ_qwp) @ HWP_p2(θ_hwp) @ INPUT
 
 
 def objective(x, target: np.ndarray) -> float:

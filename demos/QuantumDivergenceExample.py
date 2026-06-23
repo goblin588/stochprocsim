@@ -18,7 +18,7 @@ def _():
 @app.cell
 def _(get_uniform_renewal):
     # For N = 3
-    N = 3
+    N = 4
     model = get_uniform_renewal(N-1)
     print(f'The probability of tick (output 1) at each memory state: {[1-p for p in model.probs] + [1]}')
     print(f'The stationary distribution of the memory states are: {model.steady_state}')

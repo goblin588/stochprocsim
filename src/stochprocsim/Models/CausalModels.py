@@ -3,25 +3,26 @@ from ..Libraries.OpticsLib import getUtot
 from .Unitaries import *
 from .WaveplateAngles import *
 
-loop_loss = [0.4, 0.48, 0.5, 0.51, 0.52, 0.53, 0.54]
-
 class CausalModel():
-    def __init__(self, U, states:list, angles_NTU, angles_GU, name=None):
+    def __init__(self, U, states:list, angles_NTU, angles_GU, name=None, transmission: float = 1.0):
         self.U = U
-        self.U_theo = U 
+        self.U_theo = U
         self.U_optics_NTU = getUtot(angles_NTU)
-        self.U_optics_GU = getUtot(angles_GU)    
+        self.U_optics_GU = getUtot(angles_GU)
         self.states = list(states)
         self._state_map = {f"s{i}": s for i, s in enumerate(states)}
         self.name = name
         self.angles_NTU = angles_NTU
         self.angles_GU = angles_GU
-        loss = np.asarray(loop_loss[:len(self)], dtype=float)
-        # cumulative loss
-        self.loop_loss = 1 - np.cumprod(1 - loss)
+        self.set_transmission(transmission)
 
     def set_U(self, U):
         self.U = U
+
+    def set_transmission(self, T: float):
+        """Per-loop transmission T. Bin k has traversed k loops so survival = T^k."""
+        self.transmission = T
+        self.loop_transmission = np.array([T ** k for k in range(len(self))])
 
     def __getitem__(self, idx):
         return self.states[idx]

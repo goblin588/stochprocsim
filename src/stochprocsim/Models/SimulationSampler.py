@@ -43,20 +43,17 @@ class Simulator:
             res.append(b * a_prod)
             a_prod *= a
         return res
-
     def get_output_distribution_exp(self, propagate_outputs: bool = False,
                                     include_loss: bool = False):
-        """Output distribution with optional noise models."""
+        """Output distribution with optional noise propagation and loop-loss scaling."""
         if propagate_outputs:
             probs = self._get_output_distribution_propagated()
         else:
             probs = self.get_output_distribution()
 
         probs = np.array(probs, dtype=float)
-
         if include_loss:
-            loss = np.asarray(self._transition_model.model.loop_loss, dtype=float)
-            probs = probs * (1 - loss)
+            probs = probs * self._model.loop_transmission
         return probs.tolist()
 
     def _get_output_distribution_propagated(self):

@@ -54,7 +54,6 @@ def _(
 
     qq_sim = Simulator(QuantumTransitionModel(CS))
     data = qq_sim.get_output_distribution_exp(propagate_outputs=True, include_loss=True)
-    data = data * (1/(1-CS.loop_loss))
     data_theory = qq_sim.get_output_distribution_exp()
 
     x = np.arange(1, len(data) + 1)
