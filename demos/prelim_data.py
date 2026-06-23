@@ -24,12 +24,21 @@ def _():
 @app.cell(hide_code=True)
 def _(DATA_PATH, HERALD_CHANNEL, SIGNAL_CHANNEL, np, pd):
     ## READ DATA
-    _raw = pd.read_csv(DATA_PATH, sep="\t", header=0)
-    # Drop unnamed trailing columns, then repeated header rows, then cast
-    _raw = _raw.loc[:, ~_raw.columns.str.startswith("Unnamed")]
-    _first_col = _raw.columns[0]
-    _raw = _raw[_raw[_first_col].astype(str) != _first_col].reset_index(drop=True)
+    # Read header separately to get true column names, then read only that many
+    # columns — avoids pandas misaligning when data rows have trailing NaN fields
+    with open(DATA_PATH) as _f:
+        _col_names = [c.strip() for c in _f.readline().strip().split("\t")]
+
+    _raw = pd.read_csv(
+        DATA_PATH, sep="\t", skiprows=1, header=None, usecols=range(len(_col_names))
+    )
+    _raw.columns = _col_names
+    # Drop repeated header rows (non-numeric first column)
+    _raw = _raw[pd.to_numeric(_raw.iloc[:, 0], errors="coerce").notna()].reset_index(drop=True)
     _raw = _raw.astype(float)
+
+    print(f"Columns: {list(_raw.columns)}")
+    print(f"Rows after read: {len(_raw)}")
 
     ## AUTO-DETECT COINCIDENCE CHANNELS
     _coinc_cols = [c for c in _raw.columns if "+" in c]
