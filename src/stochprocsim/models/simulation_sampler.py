@@ -34,7 +34,19 @@ class Simulator:
             for j in range(self.N)
         ]
 
-    def get_output_distribution(self):
+
+    def get_output_distribution(self, propagate_outputs: bool = False):
+        """Output distribution with optional noise propagation and loop-loss scaling."""
+        if propagate_outputs:
+            probs = self._get_output_distribution_propagated()
+        else:
+            probs = self._get_output_distribution_stationary()
+
+        probs = np.array(probs, dtype=float)
+
+        return probs.tolist()
+
+    def _get_output_distribution_stationary(self):
         """Probability of each output bin: P(emit at step j, survive all previous)."""
         a_prod = 1
         res = []
@@ -43,18 +55,6 @@ class Simulator:
             res.append(b * a_prod)
             a_prod *= a
         return res
-    def get_output_distribution_exp(self, propagate_outputs: bool = False,
-                                    include_loss: bool = False):
-        """Output distribution with optional noise propagation and loop-loss scaling."""
-        if propagate_outputs:
-            probs = self._get_output_distribution_propagated()
-        else:
-            probs = self.get_output_distribution()
-
-        probs = np.array(probs, dtype=float)
-        if include_loss:
-            probs = probs * self._model.loop_transmission
-        return probs.tolist()
 
     def _get_output_distribution_propagated(self):
         """Output distribution propagating the output state after each emission."""

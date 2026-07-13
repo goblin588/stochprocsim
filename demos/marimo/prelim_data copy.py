@@ -10,14 +10,15 @@ def _():
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
-    return mo, np, pd, plt
+    return np, pd, plt
 
 
 @app.cell
 def _():
-    DATA_PATH      = "../stochprocsim/src/stochprocsim/Data/2026-06-22-1834_Trace_Brendan_PrelimData_Unnormalised.txt"
-    HERALD_CHANNEL = "Ch2"
-    SIGNAL_CHANNEL = "Ch1"
+    DATA_PATH      = "/home/brendan/Documents/PhD/Year1/EDA/Programs/stochprocsim/src/stochprocsim/data/2026-07-09-1407_Trace_file_halfpower.txt"
+    HERALD_CHANNEL = "Ch3"
+
+    SIGNAL_CHANNEL = "Ch2"
     return DATA_PATH, HERALD_CHANNEL, SIGNAL_CHANNEL
 
 
@@ -54,7 +55,7 @@ def _(DATA_PATH, HERALD_CHANNEL, SIGNAL_CHANNEL, np, pd):
         return int(other.replace("Ch", "").replace("ch", ""))
 
     _loop_cols = sorted([c for c in _coinc_cols if c != _s0_col], key=_ch_num)
-    N = len(_coinc_cols)  # total coincidence channels = memory depth
+    N = 3  # total coincidence channels = memory depth
 
     print(f"Detected N={N}  |  s0={_s0_col}  |  loop channels={_loop_cols}")
 
@@ -85,7 +86,7 @@ def _(DATA_PATH, HERALD_CHANNEL, SIGNAL_CHANNEL, np, pd):
 
     for _k, _v in counts.items():
         print(f"{_k:8s}  mean={_v.mean():.3f}  std={_v.std():.3f}")
-    return N, counts, data
+    return N, counts
 
 
 @app.cell
@@ -109,7 +110,7 @@ def _(N, counts, np, plt):
 
     fig.tight_layout()
     fig
-    return axes, fig
+    return
 
 
 @app.cell
@@ -157,7 +158,7 @@ def _(N, counts, np, p_exit, plt):
     ax_bar.legend()
     fig_bar.tight_layout()
     fig_bar
-    return ax_bar, fig_bar
+    return
 
 
 @app.cell
@@ -213,7 +214,22 @@ def _(N, T_fit, c_fit, counts, np, p_exit, plt):
     ax_fit.legend()
     fig_fit.tight_layout()
     fig_fit
-    return ax_fit, fig_fit
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":
