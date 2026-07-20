@@ -53,8 +53,9 @@ def _(BINS, DATA_PATH, pd):
     # to the single-distribution case
     _rates = data[BINS].div(data["int_time"], axis=0)
     _rates["input_state"] = data["input_state"]
-    rates = _rates.groupby("input_state").mean()
-    stds = _rates.groupby("input_state").std()
+    _g = _rates.groupby("input_state")
+    rates = _g.mean()
+    stds = _g.std().div(_g.size() ** 0.5, axis=0)  # standard error of the mean
     print(f"{len(data)} rows kept, input states: {list(rates.index)}")
     return rates, stds
 
