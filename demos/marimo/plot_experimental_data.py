@@ -45,98 +45,129 @@ def _(file_picker):
 @app.cell
 def _(BINS, DATA_PATH, pd):
     data = pd.read_csv(DATA_PATH)
-    data = data.dropna(subset=BINS + ["herald", "int_time"])
+    data = data.dropna(subset=BINS + ["herald", "int_time", "input_state"])
     data = data[data["herald"] > 0]  # herald blocked / off segments
 
-    # counts per second, so rows with different integration times average cleanly
+    # counts per second, grouped by which memory state the machine started in;
+    # a single-input file just yields one group and every cell below collapses
+    # to the single-distribution case
     _rates = data[BINS].div(data["int_time"], axis=0)
-    counts = _rates.mean()
-    stds = _rates.std() / len(data) ** 0.5  # standard error of the mean
-    print(f"{len(data)} rows kept")
-    print(counts)
-    return counts, stds
+    _rates["input_state"] = data["input_state"]
+    _g = _rates.groupby("input_state")
+    rates = _g.mean()
+    stds = _g.std().div(_g.size() ** 0.5, axis=0)  # standard error of the mean
+    print(f"{len(data)} rows kept, input states: {list(rates.index)}")
+    return rates, stds
 
 
 @app.cell
-def _(N, np):
+def _(N, np, rates):
     from stochprocsim.models.causal_models import Causal_Models
     from stochprocsim.models.simulation_sampler import Simulator
     from stochprocsim.models.transition_model import QuantumTransitionModel
 
-    _p = Simulator(QuantumTransitionModel(Causal_Models[N])).get_output_distribution(propagate_outputs=True)
-    p_theory = np.array(_p + [1 - sum(_p)])  # last bin: remainder switched to the dump
-    print(f"theory p = {np.round(p_theory, 4)}")
+    _sim = Simulator(QuantumTransitionModel(Causal_Models[N]))
+    p_theory = {}
+    for _s in rates.index:
+        _p = _sim.get_output_distribution(propagate_outputs=True, start_state=int(_s))
+        p_theory[_s] = np.array(_p + [1 - sum(_p)])  # last bin: remainder to the dump
+        print(f"s{_s}: {np.round(p_theory[_s], 4)}")
     return Causal_Models, QuantumTransitionModel, Simulator, p_theory
 
 
+@app.cell(hide_code=True)
+def _(np, plt):
+    def plot_state_grid(frac_by_state, yerr_by_state, p_theory, suptitle):
+        _states = sorted(frac_by_state)
+        _ncols = min(3, len(_states))
+        _nrows = -(-len(_states) // _ncols)
+        _fig, _axes = plt.subplots(_nrows, _ncols,
+                                   figsize=(4 * _ncols, 3 * _nrows), squeeze=False)
+        for _ax in _axes.flat[len(_states):]:
+            _ax.set_visible(False)
+        for _ax, _s in zip(_axes.flat, _states):
+            _f = frac_by_state[_s]
+            _x = np.arange(len(_f))
+            _ax.bar(_x, _f, yerr=yerr_by_state[_s], capsize=4,
+                    width=0.5, color="gold", ecolor="black", label="data")
+            _ax.bar(_x, p_theory[_s], width=0.5, fill=False, edgecolor="black",
+                    linestyle="dotted", linewidth=1.5, label="theory")
+            _ax.set_xticks(_x, _f.index)
+            _ax.tick_params(axis="x", labelsize=7)
+            _ax.set_title(f"input s{_s}")
+        _axes.flat[0].legend()
+        _fig.suptitle(suptitle)
+        _fig.tight_layout()
+        return _fig
+    return (plot_state_grid,)
+
+
 @app.cell
-def _(counts, np, p_theory, plt, stds):
+def _(p_theory, plot_state_grid, rates, stds):
     # raw fraction per bin vs theory (no loss correction)
-    _x = np.arange(len(counts))
-    _fig, _ax = plt.subplots(figsize=(6, 4))
-    _ax.bar(_x, counts / counts.sum(), yerr=stds / counts.sum(), capsize=5,
-            width=0.5, color="gold", ecolor="black", label="data")
-    _ax.bar(_x, p_theory, width=0.5, fill=False, edgecolor="black",
-            linestyle="dotted", linewidth=1.5, label="theory")
-    _ax.set_xticks(_x, counts.index)
-    _ax.set_ylabel("Quantity")
-    _ax.legend()
-    _fig
+    plot_state_grid(
+        {_s: rates.loc[_s] / rates.loc[_s].sum() for _s in rates.index},
+        {_s: stds.loc[_s] / rates.loc[_s].sum() for _s in rates.index},
+        p_theory,
+        "raw fractions vs theory",
+    )
     return
 
 
 @app.cell
-def _(counts, np, p_theory, plt, stds):
-    # fit flat background c and per-loop transmission T (bin k is weighted by T^k,
-    # the dump has traversed N loops like the last exit would)
+def _(N, np, p_theory, plot_state_grid, rates, stds):
+    # one background c and per-loop transmission T fitted jointly over all
+    # input states (bin k has traversed k loops, dump counted like the last exit)
     from scipy.optimize import minimize
 
-    _k = np.arange(len(counts))
+    _k = np.arange(N + 1)
 
     def _resid(params):
         _c, _T = params
-        _corr = (counts.values - _c) / (_T ** _k)
-        return np.sum((p_theory - _corr / _corr.sum()) ** 2)
+        _tot = 0
+        for _s in rates.index:
+            _corr = (rates.loc[_s].values - _c) / _T ** _k
+            _tot += np.sum((p_theory[_s] - _corr / _corr.sum()) ** 2)
+        return _tot
 
     c_fit, T_fit = minimize(_resid, x0=[1, 0.4],
-                            bounds=[(0, 0.9 * counts.min()), (0.05, 1)]).x
-    print(f"c = {c_fit:.1f}/s  T = {T_fit:.3f}  residual = {_resid([c_fit, T_fit]):.4f}")
+                            bounds=[(0, 0.9 * rates.values.min()), (0.05, 1)]).x
+    print(f"joint fit: c = {c_fit:.1f}/s  T = {T_fit:.3f}  residual = {_resid([c_fit, T_fit]):.4f}")
 
-    corrected = (counts - c_fit) / T_fit ** _k
-    _x = np.arange(len(counts))
-    _fig, _ax = plt.subplots(figsize=(6, 4))
-    _ax.bar(_x, corrected / corrected.sum(),
-            yerr=(stds / T_fit ** _k) / corrected.sum(), capsize=5,
-            width=0.5, color="gold", ecolor="black",
-            label=f"data (c={c_fit:.0f}, T={T_fit:.2f})")
-    _ax.bar(_x, p_theory, width=0.5, fill=False, edgecolor="black",
-            linestyle="dotted", linewidth=1.5, label="theory")
-    _ax.set_xticks(_x, counts.index)
-    _ax.set_ylabel("Quantity")
-    _ax.legend()
-    _fig
-    return (corrected,)
+    frac, yerr = {}, {}
+    for _s in rates.index:
+        _corr = (rates.loc[_s] - c_fit) / T_fit ** _k
+        frac[_s] = _corr / _corr.sum()
+        yerr[_s] = (stds.loc[_s] / T_fit ** _k) / _corr.sum()
+    plot_state_grid(frac, yerr, p_theory,
+                    f"loss-corrected (c={c_fit:.0f}/s, T={T_fit:.2f}) vs theory")
+    return (frac,)
 
 
 @app.cell
-def _(corrected, counts, p_theory):
-    # KL divergence (bits over the whole exit distribution) vs theory;
-    # scipy normalises inputs so the raw count rates can go in directly
+def _(N, frac, np, p_theory, rates):
+    # conditional KL divergence vs theory: each input state's divergence weighted
+    # by the stationary probability of the machine being in that state, then also
+    # as a rate (bits per loop). With one input state this is just its plain KL.
+    from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.stochprocq.measure import eval_diverge
 
-    print(f"eval_diverge raw:    {eval_diverge(counts.values, p_theory):.4f} bits")
-    print(f"eval_diverge fitted: {eval_diverge(corrected.values, p_theory):.4f} bits")
-    return (eval_diverge,)
+    # same weighting as kl_divergence.py: stationary probs of s0..s(N-1);
+    # the extra prepared state sN is never occupied in steady operation
+    _pi = get_uniform_renewal(N - 1).steady_state
+    _w = np.array([_pi[int(_s)] if int(_s) < N else 0.0 for _s in rates.index])
+    _w = _w / _w.sum()  # renormalise over the states actually measured
 
-
-@app.cell
-def _(N, corrected, counts, p_theory):
-    # KL divergence rate: bits per loop, averaged over the N loops
-    from stochprocsim.stochprocq.measure import kl_div
-
-    print(f"kl_div rate raw:    {kl_div(counts.values, p_theory, steps=N):.4f} bits/step")
-    print(f"kl_div rate fitted: {kl_div(corrected.values, p_theory, steps=N):.4f} bits/step")
-    return
+    kl_raw = kl_fit = 0.0
+    for _s, _ws in zip(rates.index, _w):
+        _r = eval_diverge(rates.loc[_s].values / rates.loc[_s].sum(), p_theory[_s])
+        _f = eval_diverge(frac[_s].values, p_theory[_s])
+        kl_raw += _ws * _r
+        kl_fit += _ws * _f
+        print(f"s{_s} (w={_ws:.2f}): raw {_r:.4f}  fitted {_f:.4f} bits")
+    print(f"stationary-weighted: raw {kl_raw:.4f}  fitted {kl_fit:.4f} bits")
+    print(f"rate over {N} loops: raw {kl_raw / N:.4f}  fitted {kl_fit / N:.4f} bits/step")
+    return eval_diverge, get_uniform_renewal
 
 
 @app.cell
@@ -145,15 +176,16 @@ def _(
     N,
     QuantumTransitionModel,
     Simulator,
-    corrected,
     eval_diverge,
+    frac,
+    get_uniform_renewal,
     np,
     plt,
 ):
-    # divergence-rate-vs-N plot from demo.py, with our measured N=3 rate added:
-    # build a renewal model from the corrected exit probabilities, same recipe
+    # divergence-rate-vs-N plot from demo.py, with our measured rate added:
+    # build a renewal model from the corrected s0 exit probabilities (the
+    # renewal reconstruction is defined from memory state 0), same recipe
     # as the simulated quantum curve
-    from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.utils import generate_quantum_model
 
     def _sim_quantum(n):
@@ -171,7 +203,7 @@ def _(
     _y_classical = [get_uniform_renewal(_n - 1).classical_bd(4, target_dim=2) for _n in _x_class]
     _qtheo_yerr = [0.002054339006460678, 0.0014301897956533847, 0.0016754397869550568, 0.0015075218255867487]
 
-    _p_exp = (corrected / corrected.sum()).values[:N]
+    _p_exp = frac[0].values[:N]
     _q_exp = generate_quantum_model(_p_exp)
     _m_exp = get_uniform_renewal(N - 1)
     rate_exp = eval_diverge(_m_exp.gen_dists(N)[0], _q_exp.gen_dists(N)[0], his_steps=N - 1)
@@ -194,21 +226,6 @@ def _(
     _ax.legend()
     _ax.grid(True)
     _fig
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
     return
 
 
