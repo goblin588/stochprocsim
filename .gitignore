@@ -21,6 +21,9 @@ build/
 # Jupyter / marimo
 .ipynb_checkpoints/
 
+# cloned measurement-data repo
+data/autoqstochmeasure/
+
 # IDE
 .vscode/
 .idea/

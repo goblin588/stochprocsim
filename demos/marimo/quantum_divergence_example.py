@@ -34,7 +34,7 @@ def _(mo):
 @app.cell
 def _(RenewalProcess, eval_diverge, model, np):
     # Define Quantum Model
-    q_emit = np.array([0.37, 0.32, 0.31])
+    q_emit = np.array([ 0.322196,0.503246,0.166753])
     q_survive_st = np.zeros_like(q_emit)
     q_survive_st[0] = q_emit[0]
     for i in range(1, len(q_emit)):

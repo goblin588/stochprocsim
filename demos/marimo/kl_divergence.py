@@ -11,8 +11,9 @@ def _():
 
     from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.models.causal_models import Causal_Models
+    from stochprocsim.utils import kl_divergence
 
-    return Causal_Models, get_uniform_renewal, mo, np
+    return Causal_Models, get_uniform_renewal, kl_divergence, mo, np
 
 
 @app.cell
@@ -28,7 +29,7 @@ def _(mo):
 
 
 @app.cell
-def _(Causal_Models, get_uniform_renewal, np):
+def _(Causal_Models, get_uniform_renewal, kl_divergence, np):
     def getOutput(v):
         path2, path1 = v[[0, 2]], v[[1, 3]]
         α = float(np.linalg.norm(path2))
@@ -42,49 +43,36 @@ def _(Causal_Models, get_uniform_renewal, np):
         p_1 = 1 / (N-j+epsilon)
         return p_0, p_1
 
+    def exit_dists(CS, N, i):
+        """p(x|S_i), q(x|S_i) over exit sequences x = 1, 01, 001, ..."""
+        S = CS.states[i].copy()
+        p, q = [], []
+        prod_p = 1.0
+        prod_q = 1.0
+        for j in range(N - i):
+            ### p(x|Si)
+            v = CS.U @ S
+            path2, p0, p1 = getOutput(v)
+            p.append(p1**2 * prod_p)
+            S = np.array([path2[0], 0, path2[1], 0], dtype=complex) / p0
+            prod_p *= p0**2
+
+            ### q(x|Si)
+            q0, q1 = exact_model_prob(N, j)
+            q.append(q1 * prod_q)
+            prod_q *= q0
+        return p, q
+
     for N in range(3, 6+1):
-        exact_model = get_uniform_renewal(N-1)
         CS = Causal_Models[N]
         CS.set_U(CS.U_theo)
-        stat_probs = exact_model.steady_state
-        U = CS.U
+        stat_probs = get_uniform_renewal(N-1).steady_state
 
-        r_kl = []
-        for i in range(N):
-            seq = '1'
-            S = CS.states[i].copy()
-            d_kl = []
-            prod_p = 1.0
-            prod_q = 1.0
-            n = 0.0
-            for j in range(N - i):
-                ### p(x|Si)
-                v = U @ S
-                path2, p0, p1 = getOutput(v)
-                p = p1**2 * prod_p
-                print(f"p({seq}|S_{i}): {p:0.8f}")
-                S = np.array([path2[0], 0, path2[1], 0], dtype=complex) / p0
-                n += p
-                prod_p *= p0**2
-
-                ### q(x|Si)
-                q0, q1 = exact_model_prob(N, j)
-                q = q1 * prod_q
-                seq = '0' + seq
-                prod_q *= q0
-
-                ### D_KL = p(x|Si) * log(p(x|Si) / q(x|Si))
-                D_KL = p1**2 * np.log(p / q)
-                d_kl.append(D_KL)
-
-            p_si = stat_probs[i]
-            r_kl.append(p_si * sum(d_kl))
-        print(f'\nR_KL[P||Q] (N={N}): {sum(r_kl):.6f}\n')
-    return
-
-
-@app.cell
-def _():
+        r_kl = sum(
+            stat_probs[i] * kl_divergence(*exit_dists(CS, N, i))
+            for i in range(N)
+        )
+        print(f'R_KL[P||Q] (N={N}): {r_kl:.6f} bits')
     return
 
 

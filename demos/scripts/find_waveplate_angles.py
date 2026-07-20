@@ -77,25 +77,24 @@ def compare_states(psi_a: np.ndarray, psi_b: np.ndarray):
 
 
 if __name__ == "__main__":
-    s0_states = [model.states[0] for model in Causal_Models.values()]
-
-    # Solve all states
-    for n, state in enumerate(s0_states):
-        angles, F = solve_state(state)
-        target_np = to_numpy(state)
-        found = build_state([angles["θhwp"], angles["θqwp"]])
-        found_aligned = phase_align(found, target_np)
-        print(f"── N: {n+3} ──────────────────────────")
-        print(f"  θ_HWP = {angles['θhwp']:7.3f}°   θ_QWP = {angles['θqwp']:7.3f}°")
-        print(f"  Fidelity : {F:.10f}")
-        if F < 0.9999:
-            print("  *** WARNING: low fidelity ***")
-        print(f"  Found   : {found_aligned.flatten()}")
+    # Solve all states s_j of every model
+    for n, model in Causal_Models.items():
+        print(f"── N: {n} ──────────────────────────")
+        for j, state in enumerate(model.states):
+            angles, F = solve_state(state)
+            target_np = to_numpy(state)
+            found = build_state([angles["θhwp"], angles["θqwp"]])
+            found_aligned = phase_align(found, target_np)
+            print(f"  s{j}: θ_HWP = {angles['θhwp']:7.3f}°   θ_QWP = {angles['θqwp']:7.3f}°")
+            print(f"      Fidelity : {F:.10f}")
+            if F < 0.9999:
+                print("      *** WARNING: low fidelity ***")
+            print(f"      Found   : {found_aligned.flatten()}")
         print()
 
     # Compare a specific state against a Mathematica reference
     n = 6
-    state = s0_states[n - 3]
+    state = Causal_Models[n].states[0]
     angles, F = solve_state(state)
     target_np = to_numpy(state)
     found = build_state([angles["θhwp"], angles["θqwp"]])

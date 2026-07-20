@@ -3,25 +3,36 @@ This module contains functions to compute various measures between probability d
 """
 
 import numpy as np
+from scipy.special import rel_entr
 from scipy.stats import entropy
 
-def kl_div(p:np.ndarray, q:np.ndarray) -> float:
+def kl_div(p:np.ndarray, q:np.ndarray, steps:int = None) -> float:
     """
-    Compute the Kullback-Leibler divergence between two probability distributions.
+    Compute the Kullback-Leibler divergence rate between two probability distributions.
+
+    Inputs are normalised to sum to 1, so unnormalised counts are accepted.
+    Zero bins in p contribute 0 (rel_entr handles 0*log0).
 
     Parameters:
     -------------------
     p: np.ndarray
-        The first probability distribution.
+        The first probability distribution (or unnormalised counts).
     q: np.ndarray
-        The second probability distribution.
+        The second probability distribution (or unnormalised counts).
+    steps: int, optional
+        Number of process steps to average over.
+        Defaults to log2(len(p)), the binary-word convention of check_len.
 
     Return:
     ----------------
     kl: float
-        The Kullback-Leibler divergence between the two distributions.
+        The KL divergence rate in bits per step.
     """
-    return np.sum(p * np.log(p / q), axis=-1)
+    p = np.asarray(p, dtype=float)
+    q = np.asarray(q, dtype=float)
+    if steps is None:
+        steps = check_len(p, q)
+    return np.sum(rel_entr(p / p.sum(), q / q.sum())) / np.log(2) / steps
 
 def check_len(p:np.array, q:np.array):
     if len(p) != len(q):
