@@ -35,11 +35,17 @@ class Simulator:
         ]
 
 
-    def get_output_distribution(self, propagate_outputs: bool = False):
-        """Output distribution with optional noise propagation and loop-loss scaling."""
+    def get_output_distribution(self, propagate_outputs: bool = False, start_state: int = 0):
+        """Output distribution with optional noise propagation and loop-loss scaling.
+
+        start_state picks the memory state the machine is initialised in
+        (only supported on the propagated path).
+        """
         if propagate_outputs:
-            probs = self._get_output_distribution_propagated()
+            probs = self._get_output_distribution_propagated(start_state)
         else:
+            if start_state != 0:
+                raise ValueError("start_state requires propagate_outputs=True")
             probs = self._get_output_distribution_stationary()
 
         probs = np.array(probs, dtype=float)
@@ -56,17 +62,20 @@ class Simulator:
             a_prod *= a
         return res
 
-    def _get_output_distribution_propagated(self):
+    def _get_output_distribution_propagated(self, start_state: int = 0):
         """Output distribution propagating the output state after each emission."""
         model = self._transition_model.model
-        s = model.states[0].copy()
+        s = model.states[start_state].copy()
 
         transition_probs = []
         for _ in range(len(model)):
             v = model.U @ s
             path2, a, b = _split_paths(v)
             transition_probs.append((a ** 2, b ** 2))
-            s = np.array([path2[0], 0, path2[1], 0], dtype=complex) / a
+            if a < 1e-12:  # everything emitted; no survivor path to propagate
+                s = np.zeros(4, dtype=complex)
+            else:
+                s = np.array([path2[0], 0, path2[1], 0], dtype=complex) / a
 
         a_prod = 1
         res = []
@@ -74,21 +83,6 @@ class Simulator:
             res.append(b * a_prod)
             a_prod *= a
         return res
-
-    def sample_transition_probabilities(self):
-        """Sample and print estimated transition probabilities with Poisson errors."""
-        self.run()
-        num_runs = len(self.outputs)
-
-        for i in range(len(self.outputs[0])):
-            n0 = sum(run[i]["N path |0>"] for run in self.outputs) / num_runs
-            n1 = sum(run[i]["N path |1>"] for run in self.outputs) / num_runs
-            s0, s1 = math.sqrt(n0), math.sqrt(n1)
-            denom = n0 + n1
-            p0, p1 = n0 / denom, n1 / denom
-            dp0 = math.sqrt((s0 / denom) ** 2 + (n0 * s1 / denom ** 2) ** 2)
-            dp1 = math.sqrt((s1 / denom) ** 2 + (n1 * s0 / denom ** 2) ** 2)
-            print(f"a: {p0:.3f} ± {dp0:.3f}, b: {p1:.3f} ± {dp1:.3f}")
 
     def sample_counts(self, print_outputs=True):
         """Return average counts [[n0, n1], ...] per loop step with Poisson errors."""
@@ -101,18 +95,6 @@ class Simulator:
             if print_outputs:
                 print(f"a: {n0:.3f} ± {math.sqrt(n0):.3f}, b: {n1:.3f} ± {math.sqrt(n1):.3f}")
             res.append([n0, n1])
-        return res
-
-    def sample_output_distribution(self):
-        """Return [(p, dp), ...] — fraction of photons emitted at each loop step."""
-        self.run()
-        num_runs = len(self.outputs)
-        res = []
-        for i in range(len(self.outputs[0])):
-            n1_avg = sum(run[i]["N path |1>"] for run in self.outputs) / num_runs
-            p = n1_avg / self._nphotons
-            dp = math.sqrt(n1_avg) / self._nphotons
-            res.append([p, dp])
         return res
 
     def save(self, directory: str = "Data"):
