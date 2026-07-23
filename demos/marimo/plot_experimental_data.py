@@ -149,16 +149,26 @@ def _(BINS, DATA_PATH, N, np, p_theory, pd, plot_state_grid, rates, stds):
     print(f"noise calibration used: {_cal_note}")
     bg = pd.Series({_b: _bg_by_ch.get(_b.removeprefix("coinc_ch"), 0.0) for _b in BINS})
 
+    # detector efficiency: 3 physical detectors (herald / dump / one shared,
+    # time-multiplexed detector for every loop channel), so loop bins all
+    # divide by the same factor and only dump gets its own — see
+    # stochprocsim.utils.DETECTOR_EFFICIENCY (placeholder 1.0 = no
+    # correction until it's actually calibrated)
+    from stochprocsim.utils import efficiency_for_channel
+
+    eff = pd.Series({_b: efficiency_for_channel(int(_b.removeprefix("coinc_ch")), dump_ch=7)
+                     for _b in BINS})
+
     # per-loop transmission T fitted over all input states (bin k has
     # traversed k loops, dump counted like the last exit) — real optical
-    # loss per round trip, separate from detector background/noise above
+    # loss per round trip, separate from detector background/noise/efficiency
     from scipy.optimize import minimize_scalar
 
     _k = np.array([N if _b == "coinc_ch7" else int(_b.removeprefix("coinc_ch")) // 2 for _b in BINS])
     def _resid(T):
         _tot = 0
         for _s in rates.index:
-            _corr = (rates.loc[_s] - bg) / T ** _k
+            _corr = ((rates.loc[_s] - bg) / eff) / T ** _k
             _tot += np.sum((p_theory[_s] - _corr / _corr.sum()) ** 2)
         return _tot
 
@@ -167,9 +177,9 @@ def _(BINS, DATA_PATH, N, np, p_theory, pd, plot_state_grid, rates, stds):
 
     frac, yerr = {}, {}
     for _s in rates.index:
-        _corr = (rates.loc[_s] - bg) / T_fit ** _k
+        _corr = ((rates.loc[_s] - bg) / eff) / T_fit ** _k
         frac[_s] = _corr / _corr.sum()
-        yerr[_s] = (stds.loc[_s] / T_fit ** _k) / _corr.sum()
+        yerr[_s] = ((stds.loc[_s] / eff) / T_fit ** _k) / _corr.sum()
     plot_state_grid(frac, yerr, p_theory,
                     f"loss-corrected (background from json, T={T_fit:.2f}) vs theory")
     return (frac,)

@@ -20,6 +20,23 @@ def pull_remote_data():
     return _CLONE_DIR / "data"
 
 
+DETECTOR_EFFICIENCY = {
+    'herald': 0.6,
+    'dump': 0.68,
+    'loop': 0.755,
+}
+
+
+def efficiency_for_channel(channel: int, herald_ch: int = 3, dump_ch: int = 7) -> float:
+    """Which physical detector reads `channel`, hence which DETECTOR_EFFICIENCY
+    entry applies. herald_ch/dump_ch default to this setup's TRIGG_CH/DUMP_CH."""
+    if channel == herald_ch:
+        return DETECTOR_EFFICIENCY['herald']
+    if channel == dump_ch:
+        return DETECTOR_EFFICIENCY['dump']
+    return DETECTOR_EFFICIENCY['loop']
+
+
 def kl_divergence(p, q) -> float:
     """KL divergence D(p||q) in bits between two equal-length lists.
 
