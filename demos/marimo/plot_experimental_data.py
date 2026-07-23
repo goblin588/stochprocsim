@@ -17,9 +17,11 @@ def _():
 def _(mo):
     from pathlib import Path
 
-    _DATA_DIR = Path("/home/brendan/Documents/PhD/Year1/EDA/Programs/stochprocsim/data")
-    # includes the pulled autoqstochmeasure clone; timestamped names sort chronologically
-    _files = sorted(_DATA_DIR.rglob("measurement_*.csv"), key=lambda p: p.name)
+    _DATA_DIR = Path("/home/brendan/Documents/PhD/Year1/EDA/Programs/stochprocsim/data/autoqstochmeasure/data")
+    # sort by mtime, not name — old files (measurement_N...) and new
+    # date-first files (20260722_..._measurement_N...) don't collate the
+    # same way lexicographically, so name-sort silently picks a stale file
+    _files = sorted(_DATA_DIR.glob("*.csv"), key=lambda p: p.stat().st_mtime)
     file_picker = mo.ui.dropdown(
         options={str(p.relative_to(_DATA_DIR)): p for p in _files},
         value=str(_files[-1].relative_to(_DATA_DIR)),
@@ -30,19 +32,23 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(file_picker):
+def _(file_picker, pd):
     import re
 
     DATA_PATH = file_picker.value
     N = int(re.search(r"_N(\d+)_", DATA_PATH.name).group(1))  # picks Causal_Models[N]
 
-    # coincidences with the herald: N exit bins, then the ch7 dump
-    BINS = ["coinc_ch2", "coinc_ch4", "coinc_ch6", "coinc_ch8"][:N] + ["coinc_ch7"]
-    assert len(BINS) == N + 1
+    # whatever coincidence channels this file actually recorded, in channel
+    # order, with the ch7 herald dump (if present) moved to the end
+    _cols = pd.read_csv(DATA_PATH, nrows=0).columns
+    _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+    BINS = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+    if "coinc_ch7" in _cols:
+        BINS = BINS + ["coinc_ch7"]
     return BINS, DATA_PATH, N
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(BINS, DATA_PATH, pd):
     data = pd.read_csv(DATA_PATH)
     data = data.dropna(subset=BINS + ["herald", "int_time", "input_state"])
@@ -60,8 +66,8 @@ def _(BINS, DATA_PATH, pd):
     return rates, stds
 
 
-@app.cell
-def _(N, np, rates):
+@app.cell(hide_code=True)
+def _(BINS, N, np, rates):
     from stochprocsim.models.causal_models import Causal_Models
     from stochprocsim.models.simulation_sampler import Simulator
     from stochprocsim.models.transition_model import QuantumTransitionModel
@@ -70,7 +76,13 @@ def _(N, np, rates):
     p_theory = {}
     for _s in rates.index:
         _p = _sim.get_output_distribution(propagate_outputs=True, start_state=int(_s))
-        p_theory[_s] = np.array(_p + [1 - sum(_p)])  # last bin: remainder to the dump
+        # _p[i] is the probability of exiting on loop i+1 (channel 2*(i+1));
+        # channels beyond the model's N loops (extra recorded channels) get 0
+        _loop_p = {2 * (_i + 1): _v for _i, _v in enumerate(_p)}
+        p_theory[_s] = np.array([
+            1 - sum(_p) if _b == "coinc_ch7" else _loop_p.get(int(_b.removeprefix("coinc_ch")), 0.0)
+            for _b in BINS
+        ])
         print(f"s{_s}: {np.round(p_theory[_s], 4)}")
     return Causal_Models, QuantumTransitionModel, Simulator, p_theory
 
@@ -102,7 +114,7 @@ def _(np, plt):
     return (plot_state_grid,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(p_theory, plot_state_grid, rates, stds):
     # raw fraction per bin vs theory (no loss correction)
     plot_state_grid(
@@ -114,71 +126,62 @@ def _(p_theory, plot_state_grid, rates, stds):
     return
 
 
-@app.cell
-def _(N, np, p_theory, plot_state_grid, rates, stds):
-    # one background c and per-loop transmission T fitted jointly over all
-    # input states (bin k has traversed k loops, dump counted like the last exit)
-    from scipy.optimize import minimize
+@app.cell(hide_code=True)
+def _(BINS, DATA_PATH, N, np, p_theory, pd, plot_state_grid, rates, stds):
+    # background/noise per channel: read from the noise-calibration json that
+    # was in effect for this run (measurement.py points each measurement's
+    # sidecar at the calibration file used, by filename, resolved relative to
+    # this same data dir) — not fit, so it can't silently absorb real
+    # discrepancies. Falls back to zero (no correction) for older
+    # measurements taken before calibrate_background() existed.
+    import json as _json
 
-    _k = np.arange(N + 1)
+    _json_path = DATA_PATH.with_suffix(".json")
+    _bg_by_ch = {}
+    _cal_note = "none (background=0)"
+    if _json_path.exists():
+        _cal_ref = _json.loads(_json_path.read_text()).get("noise_calibration")
+        if _cal_ref:
+            _cal_path = DATA_PATH.parent / _cal_ref["file"]
+            if _cal_path.exists():
+                _bg_by_ch = _json.loads(_cal_path.read_text()).get("background_rate_hz", {})
+                _cal_note = f"{_cal_ref['file']} ({_cal_ref['saved_at']})"
+    print(f"noise calibration used: {_cal_note}")
+    bg = pd.Series({_b: _bg_by_ch.get(_b.removeprefix("coinc_ch"), 0.0) for _b in BINS})
 
-    def _resid(params):
-        _c, _T = params
+    # per-loop transmission T fitted over all input states (bin k has
+    # traversed k loops, dump counted like the last exit) — real optical
+    # loss per round trip, separate from detector background/noise above
+    from scipy.optimize import minimize_scalar
+
+    _k = np.array([N if _b == "coinc_ch7" else int(_b.removeprefix("coinc_ch")) // 2 for _b in BINS])
+    def _resid(T):
         _tot = 0
         for _s in rates.index:
-            _corr = (rates.loc[_s].values - _c) / _T ** _k
+            _corr = (rates.loc[_s] - bg) / T ** _k
             _tot += np.sum((p_theory[_s] - _corr / _corr.sum()) ** 2)
         return _tot
 
-    c_fit, T_fit = minimize(_resid, x0=[1, 0.4],
-                            bounds=[(0, 0.9 * rates.values.min()), (0.05, 1)]).x
-    print(f"joint fit: c = {c_fit:.1f}/s  T = {T_fit:.3f}  residual = {_resid([c_fit, T_fit]):.4f}")
+    T_fit = minimize_scalar(_resid, bounds=(0.05, 1), method="bounded").x
+    print(f"transmission fit: T = {T_fit:.3f}  residual = {_resid(T_fit):.4f}")
 
     frac, yerr = {}, {}
     for _s in rates.index:
-        _corr = (rates.loc[_s] - c_fit) / T_fit ** _k
+        _corr = (rates.loc[_s] - bg) / T_fit ** _k
         frac[_s] = _corr / _corr.sum()
         yerr[_s] = (stds.loc[_s] / T_fit ** _k) / _corr.sum()
     plot_state_grid(frac, yerr, p_theory,
-                    f"loss-corrected (c={c_fit:.0f}/s, T={T_fit:.2f}) vs theory")
+                    f"loss-corrected (background from json, T={T_fit:.2f}) vs theory")
     return (frac,)
 
 
-@app.cell
-def _(N, frac, np, p_theory, rates):
-    # conditional KL divergence vs theory: each input state's divergence weighted
-    # by the stationary probability of the machine being in that state, then also
-    # as a rate (bits per loop). With one input state this is just its plain KL.
-    from stochprocsim.stochprocq import get_uniform_renewal
-    from stochprocsim.stochprocq.measure import eval_diverge
-
-    # same weighting as kl_divergence.py: stationary probs of s0..s(N-1);
-    # the extra prepared state sN is never occupied in steady operation
-    _pi = get_uniform_renewal(N - 1).steady_state
-    _w = np.array([_pi[int(_s)] if int(_s) < N else 0.0 for _s in rates.index])
-    _w = _w / _w.sum()  # renormalise over the states actually measured
-
-    kl_raw = kl_fit = 0.0
-    for _s, _ws in zip(rates.index, _w):
-        _r = eval_diverge(rates.loc[_s].values / rates.loc[_s].sum(), p_theory[_s])
-        _f = eval_diverge(frac[_s].values, p_theory[_s])
-        kl_raw += _ws * _r
-        kl_fit += _ws * _f
-        print(f"s{_s} (w={_ws:.2f}): raw {_r:.4f}  fitted {_f:.4f} bits")
-    print(f"stationary-weighted: raw {kl_raw:.4f}  fitted {kl_fit:.4f} bits")
-    print(f"rate over {N} loops: raw {kl_raw / N:.4f}  fitted {kl_fit / N:.4f} bits/step")
-    return eval_diverge, get_uniform_renewal
-
-
-@app.cell
+@app.cell(hide_code=True)
 def _(
     Causal_Models,
     N,
     QuantumTransitionModel,
     Simulator,
-    eval_diverge,
     frac,
-    get_uniform_renewal,
     np,
     plt,
 ):
@@ -186,6 +189,8 @@ def _(
     # build a renewal model from the corrected s0 exit probabilities (the
     # renewal reconstruction is defined from memory state 0), same recipe
     # as the simulated quantum curve
+    from stochprocsim.stochprocq import get_uniform_renewal
+    from stochprocsim.stochprocq.measure import eval_diverge
     from stochprocsim.utils import generate_quantum_model
 
     def _sim_quantum(n):
@@ -203,21 +208,30 @@ def _(
     _y_classical = [get_uniform_renewal(_n - 1).classical_bd(4, target_dim=2) for _n in _x_class]
     _qtheo_yerr = [0.002054339006460678, 0.0014301897956533847, 0.0016754397869550568, 0.0015075218255867487]
 
-    _p_exp = frac[0].values[:N]
-    _q_exp = generate_quantum_model(_p_exp)
+    # stationary-weighted over every measured input state, not just s0 —
+    # same weighting as the raw/fitted KL cell above (sN's weight is 0)
+    _pi_exp = get_uniform_renewal(N - 1).steady_state
+    _w_exp = np.array([_pi_exp[int(_s)] if int(_s) < N else 0.0 for _s in frac])
+    _w_exp = _w_exp / _w_exp.sum()
     _m_exp = get_uniform_renewal(N - 1)
-    rate_exp = eval_diverge(_m_exp.gen_dists(N)[0], _q_exp.gen_dists(N)[0], his_steps=N - 1)
-    print(f"experimental rate (N={N}): {rate_exp:.4f}")
 
-    _palette = ["#3B5BA5", "#800E13", "#E63946"]
+    rate_exp = 0.0
+    for _s, _ws in zip(frac, _w_exp):
+        if _ws == 0:
+            continue
+        _q_exp = generate_quantum_model(frac[_s].values[:N])
+        rate_exp += _ws * eval_diverge(_m_exp.gen_dists(N)[0], _q_exp.gen_dists(N)[0], his_steps=N - 1)
+    print(f"stationary-weighted experimental rate (N={N}): {rate_exp:.4f}")
+
+    _palette = ["#3B5BA5", "#800E13", "#C11B26"]
     _fig, _ax = plt.subplots()
     _ax.plot(_x_class, _y_classical, '-s', label='Classical bound', color=_palette[0], linewidth=1.5)
     _ax.errorbar(_x_quant, _y_quantum, yerr=_qtheo_yerr, fmt='-^', capsize=3,
                  label='Quantum (Target)', color=_palette[1], linewidth=1.5)
-    _ax.axhline(rate_exp, color=_palette[2], linestyle=':', linewidth=1.5,
-                label=f'Experiment N={N}')
-    _ax.set_ylim(0.005, 0.06)
-    _ax.fill_between(_x_class, _y_classical, _ax.get_ylim()[1], alpha=0.3,
+    _ax.plot(_x_class, [rate_exp] * len(_x_class), '--o',
+             label=f'Experiment N={N}', color=_palette[2], linewidth=1.5)
+    # _ax.set_ylim(0.005, 0.06)
+    _ax.fill_between(_x_class, _y_classical, _ax.get_ylim()[1], alpha=0.4,
                      color='none', edgecolor=_palette[0], hatch='///')
     _ax.set_xticks(_x_class)
     _ax.set_xlabel('N')
