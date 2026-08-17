@@ -80,13 +80,9 @@ def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
     return {}, "none (background=0)"
 
 
-def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
-    """`losses` dict in effect for a specific measurement:
-    `det_eff_setup`/`det_eff_dump` (loop = 1 reference, dump relative to it)
-    and `loss_input_to_setup`/`loss_per_loop_pass`/`loss_to_dump` — despite
-    the "loss_" naming these are transmission ratios (<=1), matching
-    get_loss's input_to_loop/loop_to_loop/loop_to_dump args directly, not
-    1 - transmission.
+def _loss_calibration_meta(json_path: Path) -> tuple[dict, str]:
+    """The *_loss_calibration.json content in effect for a specific
+    measurement — shared lookup behind loss_calibration_for/loss_rates_for.
 
     Prefers json_path's own "loss_calibration" field — the *entire*
     contents of the *_loss_calibration.json in effect when that
@@ -100,14 +96,37 @@ def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
     """
     if json_path.exists():
         cal = json.loads(json_path.read_text()).get("loss_calibration")
-        if cal and "losses" in cal:
-            return cal["losses"], f"embedded ({cal.get('file', '?')}, {cal.get('saved_at', '?')})"
+        if cal:
+            return cal, f"embedded ({cal.get('file', '?')}, {cal.get('saved_at', '?')})"
 
     files = sorted(json_path.parent.glob("*_loss_calibration.json"), key=lambda p: p.name)
     if not files:
         return {}, "none (no *_loss_calibration.json found)"
     latest = files[-1]
-    return json.loads(latest.read_text())["losses"], f"{latest.name} (dir fallback, not necessarily in effect)"
+    return json.loads(latest.read_text()), f"{latest.name} (dir fallback, not necessarily in effect)"
+
+
+def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
+    """`losses` dict in effect for a specific measurement:
+    `det_eff_setup`/`det_eff_dump` (loop = 1 reference, dump relative to it)
+    and `loss_input_to_setup`/`loss_per_loop_pass`/`loss_to_dump` — despite
+    the "loss_" naming these are transmission ratios (<=1), matching
+    get_loss's input_to_loop/loop_to_loop/loop_to_dump args directly, not
+    1 - transmission. See _loss_calibration_meta for the embedded-vs-
+    fallback lookup this reads from.
+    """
+    cal, note = _loss_calibration_meta(json_path)
+    return cal.get("losses", {}), note
+
+
+def loss_rates_for(json_path: Path) -> tuple[dict, str]:
+    """coincidence_rates_hz dict in effect for a specific measurement — the
+    raw per-stage rates (C0/C0d/C2/C4/Cd/Cin, each with an "_err" SEM
+    companion) that loss_calibration_for's losses were computed from. See
+    _loss_calibration_meta for the embedded-vs-fallback lookup this reads
+    from."""
+    cal, note = _loss_calibration_meta(json_path)
+    return cal.get("coincidence_rates_hz", {}), note
 
 
 def rates_by_input_state(data: pd.DataFrame, bins: list[str],
@@ -270,6 +289,21 @@ def _demo():
         assert losses3 == {}
         assert "none" in note3
     print("loss_calibration_for: ok")
+
+    # loss_rates_for: same embedded-first lookup, but pulling
+    # coincidence_rates_hz instead of losses
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        run_path = tmp / "run.json"
+        run_path.write_text(json.dumps({
+            "loss_calibration": {"file": "x.json", "saved_at": "x",
+                                  "losses": {"det_eff_dump": 0.9},
+                                  "coincidence_rates_hz": {"C2": 10.0, "C4": 4.0}},
+        }))
+        rates, note = loss_rates_for(run_path)
+        assert rates == {"C2": 10.0, "C4": 4.0}
+        assert note.startswith("embedded")
+    print("loss_rates_for: ok")
 
     # ordinary run: no basis column at all -> plain per-state mean/SEM
     plain = pd.DataFrame({

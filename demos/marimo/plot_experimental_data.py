@@ -15,11 +15,13 @@ def _():
         background_rate_by_channel,
         efficiency_for_channel,
         loss_calibration_for,
+        loss_rates_for,
     )
     return (
         background_rate_by_channel,
         efficiency_for_channel,
         loss_calibration_for,
+        loss_rates_for,
         mo,
         np,
         pd,
@@ -258,6 +260,7 @@ def _(DATA_PATH, N, classical_loss, get_loss, loss_calibration_for):
 
     print(f'i2l:{input_to_loop_sp}, l2l: {loop_to_loop_sp}, l2d:{loop_to_dump_sp}')
 
+
     print(f"SINGLE PHOTON (counts):  input_to_loop={input_to_loop_sp:.3f}  "
           f"loop_to_loop={loop_to_loop_sp:.3f}  loop_to_dump={loop_to_dump_sp:.3f}")
     print(f"eta_loop: 1.0  eta_dump: {eta_dump_sp:.3f}")
@@ -272,7 +275,7 @@ def _(DATA_PATH, N, classical_loss, get_loss, loss_calibration_for):
 @app.cell(hide_code=True)
 def _(BINS, DATA_PATH, background_rate_by_channel, efficiency_for_channel, pd):
     # background/noise and detector efficiency per channel -- shared by all
-    # three T_classical / T_single_photon / T_fit correction cells below.
+    # three T_classical / T_single_photon / T_measured correction cells below.
     # background: read from the noise-calibration json that was in effect
     # for this run (measurement.py points each measurement's sidecar at the
     # calibration file used, by filename, resolved relative to this same
@@ -354,31 +357,30 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(BINS, N, bg, eff, np, p_exact, p_theory, plot_state_grid, rates, stds):
-    # T_fit: per-loop transmission T fitted against the S0 input distribution
-    # only (bin k has traversed k loops, dump counted like the last exit) —
-    # no direct measurement, just whatever T makes the s0 shape match theory.
-    # Other measured states aren't used for the fit.
-    from scipy.optimize import minimize_scalar
+def _(BINS, DATA_PATH, N, bg, eff, loss_rates_for, np, p_exact, p_theory, plot_state_grid, rates, stds):
+    # T_measured: per-loop transmission measured directly from the loss
+    # calibration's own coincidence rates -- C_one_loop / C_zero_loops
+    # (C4/C2: the zero-loop-bypass and one-loop-pass stages share every
+    # upstream loss/input-coupling factor, so their ratio isolates just
+    # the one-loop-pass transmission) -- rather than fitted to match the
+    # S0 shape against theory.
+    _loss_rates, _loss_rates_note = loss_rates_for(DATA_PATH.with_suffix(".json"))
+    print(f"loss calibration rates used: {_loss_rates_note}")
+    _c2, _c4 = _loss_rates.get("C2", 0.0), _loss_rates.get("C4", 0.0)
+    T_measured = _c4 / _c2 if _c2 else 0.0
+    print(f"T_measured = C4/C2 = {_c4:.3f}/{_c2:.3f} = {T_measured:.3f}")
 
     _k = np.array([N if _b == "coinc_ch7" else int(_b.removeprefix("coinc_ch")) // 2 for _b in BINS])
-    def _resid(T):
-        _corr = ((rates.loc[0] - bg) / eff) / T ** _k
-        return np.sum((p_theory[0] - _corr / _corr.sum()) ** 2)
-
-    T_fit = minimize_scalar(_resid, bounds=(0.05, 1), method="bounded").x
-    print(f"transmission fit: T = {T_fit:.3f}  residual = {_resid(T_fit):.4f}")
-    T_fit = 0.32
-    transmission_fit = T_fit ** _k
+    transmission_measured = T_measured ** _k
 
     frac, yerr = {}, {}
     for _s in rates.index:
-        _corr = ((rates.loc[_s] - bg) / eff) / transmission_fit
+        _corr = ((rates.loc[_s] - bg) / eff) / transmission_measured
         frac[_s] = _corr / _corr.sum()
-        yerr[_s] = ((stds.loc[_s] / eff) / transmission_fit) / _corr.sum()
-    print(f"s0 (loss-corrected, T_fit): {np.round(frac[0].to_numpy(), 4)}")
+        yerr[_s] = ((stds.loc[_s] / eff) / transmission_measured) / _corr.sum()
+    print(f"s0 (loss-corrected, T_measured): {np.round(frac[0].to_numpy(), 4)}")
     plot_state_grid(frac, yerr, p_theory,
-                    f"loss-corrected (T_fit={T_fit:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
+                    f"loss-corrected (T_measured={T_measured:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
                     p_exact=p_exact)
     return (frac,)
 
