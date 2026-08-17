@@ -44,13 +44,18 @@ def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
     keyed by channel number as a string (matches noise_calibration's
     background_rate_hz shape).
 
-    Prefers the inline background reading measurement.py now takes at the
-    start of every run — json_path's own "background" field, the freshest
-    possible since it's measured seconds before that exact run starts —
-    over the older noise_calibration pointer (a separate calibrate_background()
-    run, possibly stale, resolved by filename next to json_path). Returns
-    ({}, note) with an explanatory note when neither is available (data
-    from before either existed).
+    Three sources, in priority order (each a strictly better estimate of
+    the run's own background floor than the last):
+      1. json_path's own "background" field — the inline reading
+         measurement.py takes seconds before that exact run starts.
+      2. json_path's "noise_calibration" field, when it's the *entire*
+         contents of a *_noise_calibration.json embedded directly (current
+         measurement.py behaviour) — background_rate_hz is right there,
+         no second file to open.
+      3. the older, now-superseded shape where "noise_calibration" was
+         just a {file, saved_at} pointer — resolved by filename next to
+         json_path, since that's all pre-embedding data has.
+    Returns ({}, note) with an explanatory note when none are available.
     """
     if not json_path.exists():
         return {}, "none (background=0)"
@@ -63,14 +68,46 @@ def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
                  for k, v in bg_row.items() if k.startswith("coinc_ch")}
         return by_ch, f"inline (+{meta.get('background_offset_ns', '?')}ns, {int_time:.0f}s)"
 
-    cal_ref = meta.get("noise_calibration")
-    if cal_ref:
-        cal_path = json_path.parent / cal_ref["file"]
+    cal = meta.get("noise_calibration")
+    if cal and "background_rate_hz" in cal:
+        return cal["background_rate_hz"], f"embedded ({cal.get('file', '?')}, {cal.get('saved_at', '?')})"
+    if cal and "file" in cal:
+        cal_path = json_path.parent / cal["file"]
         if cal_path.exists():
             by_ch = json.loads(cal_path.read_text()).get("background_rate_hz", {})
-            return by_ch, f"{cal_ref['file']} ({cal_ref['saved_at']})"
+            return by_ch, f"{cal['file']} ({cal.get('saved_at', '?')})"
 
     return {}, "none (background=0)"
+
+
+def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
+    """`losses` dict in effect for a specific measurement:
+    `det_eff_setup`/`det_eff_dump` (loop = 1 reference, dump relative to it)
+    and `loss_input_to_setup`/`loss_per_loop_pass`/`loss_to_dump` — despite
+    the "loss_" naming these are transmission ratios (<=1), matching
+    get_loss's input_to_loop/loop_to_loop/loop_to_dump args directly, not
+    1 - transmission.
+
+    Prefers json_path's own "loss_calibration" field — the *entire*
+    contents of the *_loss_calibration.json in effect when that
+    measurement was saved (current measurement.py behaviour), frozen at
+    save time so it can't drift if calibrate_loss() runs again later.
+    Falls back to whichever *_loss_calibration.json is most recent next to
+    json_path, for older measurements taken before that field was
+    embedded — note that fallback isn't necessarily what was actually in
+    effect for this specific measurement, just the best available guess.
+    Returns ({}, note) if neither is available.
+    """
+    if json_path.exists():
+        cal = json.loads(json_path.read_text()).get("loss_calibration")
+        if cal and "losses" in cal:
+            return cal["losses"], f"embedded ({cal.get('file', '?')}, {cal.get('saved_at', '?')})"
+
+    files = sorted(json_path.parent.glob("*_loss_calibration.json"), key=lambda p: p.name)
+    if not files:
+        return {}, "none (no *_loss_calibration.json found)"
+    latest = files[-1]
+    return json.loads(latest.read_text())["losses"], f"{latest.name} (dir fallback, not necessarily in effect)"
 
 
 def rates_by_input_state(data: pd.DataFrame, bins: list[str],
@@ -166,7 +203,7 @@ def _demo():
     import tempfile
 
     # background_rate_by_channel: inline "background" field takes priority
-    # over a noise_calibration pointer when both are present
+    # over an embedded/pointer noise_calibration when more than one is present
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         cal_path = tmp / "cal.json"
@@ -181,18 +218,58 @@ def _demo():
         assert by_ch == {"2": 2.0, "4": 1.0}
         assert "inline" in note
 
-        # no inline field -> falls back to the noise_calibration pointer
-        run_path.write_text(json.dumps({"noise_calibration": {"file": "cal.json", "saved_at": "x"}}))
+        # no inline field, noise_calibration is the entire calibration file
+        # embedded directly (current measurement.py behaviour) -> read
+        # background_rate_hz straight off it, no second file involved
+        run_path.write_text(json.dumps({
+            "noise_calibration": {"file": "cal.json", "saved_at": "x", "background_rate_hz": {"2": 42.0}},
+        }))
         by_ch2, note2 = background_rate_by_channel(run_path)
-        assert by_ch2 == {"2": 99.0}
-        assert note2.startswith("cal.json")
+        assert by_ch2 == {"2": 42.0}
+        assert note2.startswith("embedded")
+
+        # older shape: noise_calibration is just a {file, saved_at} pointer
+        # -> falls back to resolving that file next to run_path
+        run_path.write_text(json.dumps({"noise_calibration": {"file": "cal.json", "saved_at": "x"}}))
+        by_ch3, note3 = background_rate_by_channel(run_path)
+        assert by_ch3 == {"2": 99.0}
+        assert note3.startswith("cal.json")
+
+        # nothing present -> empty, with an explanatory note
+        run_path.write_text(json.dumps({}))
+        by_ch4, note4 = background_rate_by_channel(run_path)
+        assert by_ch4 == {}
+        assert "none" in note4
+    print("background_rate_by_channel: ok")
+
+    # loss_calibration_for: embedded "loss_calibration" field on the
+    # measurement's own json takes priority over a directory-wide fallback
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / "20260101_000000_loss_calibration.json").write_text(
+            json.dumps({"losses": {"det_eff_dump": 0.5}}))
+        run_path = tmp / "run.json"
+        run_path.write_text(json.dumps({
+            "loss_calibration": {"file": "20260101_000000_loss_calibration.json", "saved_at": "x",
+                                  "losses": {"det_eff_dump": 0.9}},
+        }))
+        losses, note = loss_calibration_for(run_path)
+        assert losses == {"det_eff_dump": 0.9}
+        assert note.startswith("embedded")
+
+        # no embedded field -> falls back to the most recent file in the
+        # same directory (older measurements, taken before the embed existed)
+        run_path.write_text(json.dumps({}))
+        losses2, note2 = loss_calibration_for(run_path)
+        assert losses2 == {"det_eff_dump": 0.5}
+        assert "dir fallback" in note2
 
         # neither present -> empty, with an explanatory note
-        run_path.write_text(json.dumps({}))
-        by_ch3, note3 = background_rate_by_channel(run_path)
-        assert by_ch3 == {}
+        (tmp / "20260101_000000_loss_calibration.json").unlink()
+        losses3, note3 = loss_calibration_for(run_path)
+        assert losses3 == {}
         assert "none" in note3
-    print("background_rate_by_channel: ok")
+    print("loss_calibration_for: ok")
 
     # ordinary run: no basis column at all -> plain per-state mean/SEM
     plain = pd.DataFrame({

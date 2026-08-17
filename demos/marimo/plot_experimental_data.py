@@ -10,7 +10,21 @@ def _():
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
-    return mo, np, pd, plt
+
+    from stochprocsim.utils import (
+        background_rate_by_channel,
+        efficiency_for_channel,
+        loss_calibration_for,
+    )
+    return (
+        background_rate_by_channel,
+        efficiency_for_channel,
+        loss_calibration_for,
+        mo,
+        np,
+        pd,
+        plt,
+    )
 
 
 @app.cell(hide_code=True)
@@ -174,113 +188,117 @@ def _(p_exact, p_theory, plot_state_grid, rates, stds):
 
 
 @app.cell
-def _():
-    #REALISTIC LOSS ESIMATION
-    # Measurements taken as mean of 200 samples, error is std 
-
-    # Forward Measurements (mW)
-    # input_prep_power = 25.18
-    # input_prep_power_err = 0.0075
-    # out_setup = 15.72
-    # out_setup_err = 0.040
-    # out_dump = 15.13
-    # out_dump_err = 0.209
-
-    # input_setup_out_after_loop = 14.75
-    # input_setup_out_after_loop_err = 0.042
-    # out_dump_after_looping = 6.45
-    # out_dump_after_looping_err = 1.02
-
-    # #Reverse Measurements (mW)
-    # reverse_power = 12.78
-    # reverse_power_err = 0.98
-    # out_loop_path = 7.7
-    # out_loop_path_err = 0.652
-    # out_input_prep = 10.85
-    # out_input_prep_err = 0.865
+def _(N):
+    # REALISTIC LOSS ESTIMATION -- classical (power meter)
+    # Measurements taken as mean of 200 samples, error is std
 
     # Forward Measurements (mW)
     input_prep_power = 28.97
     input_prep_power_err = 0.02
     out_setup = 18.33
     out_setup_err = 0.018
-    out_dump = 17.03
-    out_dump_err = 0.207
 
     input_setup_out_after_loop = 17.67
     input_setup_out_after_loop_err = 0.015
     out_dump_after_looping = 7.422 - 0.259
     out_dump_after_looping_err = 0.380
 
-    #Reverse Measurements (mW) its too different
-    # reverse_power = 11.02
-    # reverse_power_err = 1.569
-    # out_loop_path = 5.17
-    # out_loop_path_err = 0.580
-    # out_input_prep = 
-    # out_input_prep_err = 
-
     loop_input = 30.48
     loop_input_err = 2
     loop_output = 21.38
     loop_output_err = 0.070
 
-    #Switch path losses
-    #Input prep goes to bl in, Loop wh in
-    # Setup on wh out, dump bl out
-    l_in_bl_out_bl = out_dump/input_prep_power # input to dump
-    l_in_bl_out_wh = out_setup/input_prep_power # input to setup
-    l_in_wh_out_bl = out_dump_after_looping/input_setup_out_after_loop # loop to dump
-    l_in_wh_out_wh = loop_output/loop_input # loop to setup
+    # Switch path losses: input prep -> "bl" in, loop -> "wh" in;
+    # setup -> "wh" out, dump -> "bl" out
+    input_to_loop = out_setup / input_prep_power
+    loop_to_loop = loop_output / loop_input
+    loop_to_dump = out_dump_after_looping / input_setup_out_after_loop
+    eta_loop = 1.0
 
-    print(f'TRANSMISSIONS: \n Input -> Dump: {l_in_bl_out_bl:.2f}', 
-    f'\n Input -> U:{l_in_bl_out_wh:.2f}' , 
-    f'\n Loop -> Dump:{l_in_wh_out_bl:.2f}', 
-    f'\n Loop -> U:{l_in_wh_out_wh:.2f}')
+    print(f"CLASSICAL (power meter):  input_to_loop={input_to_loop:.3f}  "
+          f"loop_to_loop={loop_to_loop:.3f}  loop_to_dump={loop_to_dump:.3f}")
+    print(f"eta_loop: {eta_loop}  eta_dump: not measurable with a power meter -- see single-photon cell")
 
-    # print(f'loop wh wh Path: reverse:{l_in_wh_out_wh:.2f} forward: {loop_output/loop_input:.2f}')
-
-    # print(f'bl wh Path: {l_in_bl_out_wh:.2f}|should be greater or equal to: {out_input_prep/reverse_power:.2f}')
-
-
-    def calc_loss(N, isDump=False):
-        # for a run of loops N
-        losses = [0] * (N) # initialise a list of length (N-1), + 1 for dump 
-        for i in range(len(losses)):
-            # print(f'{i}: {l_in_bl_out_wh} * ({l_in_wh_out_wh}**({i}))')
-            losses[i] = 1-(l_in_bl_out_wh * (l_in_wh_out_wh**(i)))
-        if isDump:
-            losses.append(1-(l_in_wh_out_bl*l_in_bl_out_wh * (l_in_wh_out_wh**(N))))
+    def get_loss(mode, N, *, input_to_loop, loop_to_loop, loop_to_dump):
+        """Cumulative per-bin loss (1 - transmission), length N+1: N loop
+        bins then the dump. Bin k (1-indexed) has passed through k loop
+        transmissions; dump has passed N loop transmissions plus the
+        loop->dump switch. `mode` ('classical' / 'single_photon') isn't used
+        to change the formula -- it's there so callers are explicit about
+        which measurement supplied the three ratios."""
+        losses = [1 - (input_to_loop * loop_to_loop ** k) for k in range(N)]
+        losses.append(1 - (input_to_loop * loop_to_loop ** N * loop_to_dump))
         return losses
 
-    # print(f'loop loss: {1-l_in_wh_out_wh}')
+    classical_loss = get_loss("classical", N, input_to_loop=input_to_loop,
+                               loop_to_loop=loop_to_loop, loop_to_dump=loop_to_dump)
+    print(f"classical cumulative loss: {[round(x, 4) for x in classical_loss]}")
+    return classical_loss, get_loss
 
-    def reverse_loss(N, counts, bckgnd):
-        """ Reverses loss on a bin with counts, at loop i in a process N detected with eff n and background counts bckg"""
-        res = [0]*(N+1)
-        losses = calc_loss(N, True)
-        print(f'Losses: {losses}')
-        # reverse loss on loop outputs
-        for i in range(len(counts)-1):
-            res[i] = ((counts[i] - bckgnd[i])/n_loop)*(1/losses[i])
-        res[-1] = ((counts[-1] - bckgnd[-1])/n_dump)*(1/losses[-1])
-        return res        
-    #Detector efficiencies
-    n_dump = 1
-    n_loop = 0.9*n_dump
 
-    # print(calc_loss(3, True))
-    counts = [100, 50, 20, 8, 5]
-    background = [1,1,1,1,1]
-    print(f'Reverse loss counts: {reverse_loss(4, counts, background)}')
-    return (calc_loss,)
+@app.cell(hide_code=True)
+def _(DATA_PATH, N, classical_loss, get_loss, loss_calibration_for):
+    # single-photon coincidence-count calibration -- same three ratios as the
+    # classical power-meter cell above, but measured via single-photon
+    # counting instead of a power meter, so it can be compared directly
+    # against classical_loss. Read from this measurement's own embedded
+    # loss_calibration field (frozen at save time by the loop apparatus's
+    # loss-calibration routine, so it's exactly what was in effect for this
+    # run, not just whatever's most recently on disk): despite the "loss_"
+    # naming its `losses` dict already holds transmission ratios (<=1), not
+    # 1 - transmission, so they map directly onto get_loss's
+    # input_to_loop/loop_to_loop/loop_to_dump args.
+    _losses, _cal_note = loss_calibration_for(DATA_PATH.with_suffix(".json"))
+    print(f"loss calibration used: {_cal_note}")
+
+    eta_dump_sp = _losses.get("det_eff_dump", 0.0)
+    input_to_loop_sp = _losses.get("loss_input_to_setup", 0.0)
+    loop_to_loop_sp = _losses.get("loss_per_loop_pass", 0.0)
+    loop_to_dump_sp = _losses.get("loss_to_dump", 0.0)
+
+    print(f'i2l:{input_to_loop_sp}, l2l: {loop_to_loop_sp}, l2d:{loop_to_dump_sp}')
+
+    print(f"SINGLE PHOTON (counts):  input_to_loop={input_to_loop_sp:.3f}  "
+          f"loop_to_loop={loop_to_loop_sp:.3f}  loop_to_dump={loop_to_dump_sp:.3f}")
+    print(f"eta_loop: 1.0  eta_dump: {eta_dump_sp:.3f}")
+
+    sp_loss = get_loss("single_photon", N, input_to_loop=input_to_loop_sp,
+                        loop_to_loop=loop_to_loop_sp, loop_to_dump=loop_to_dump_sp)
+    print(f"classical cumulative loss:     {[round(x, 4) for x in classical_loss]}")
+    print(f"single-photon cumulative loss: {[round(x, 4) for x in sp_loss]}")
+    return (sp_loss,)
+
+
+@app.cell(hide_code=True)
+def _(BINS, DATA_PATH, background_rate_by_channel, efficiency_for_channel, pd):
+    # background/noise and detector efficiency per channel -- shared by all
+    # three T_classical / T_single_photon / T_fit correction cells below.
+    # background: read from the noise-calibration json that was in effect
+    # for this run (measurement.py points each measurement's sidecar at the
+    # calibration file used, by filename, resolved relative to this same
+    # data dir) — not fit, so it can't silently absorb real discrepancies.
+    # Falls back to zero (no correction) for older measurements taken
+    # before either background source existed.
+    _bg_by_ch, _cal_note = background_rate_by_channel(DATA_PATH.with_suffix(".json"))
+    print(f"background used: {_cal_note}")
+    print(f"background counts per channel (Hz): {_bg_by_ch}")
+    bg = pd.Series({_b: _bg_by_ch.get(_b.removeprefix("coinc_ch"), 0.0) for _b in BINS})
+
+    # detector efficiency: 3 physical detectors (herald / dump / one shared,
+    # time-multiplexed detector for every loop channel), so loop bins all
+    # divide by the same factor and only dump gets its own — see
+    # stochprocsim.utils.DETECTOR_EFFICIENCY
+    eff = pd.Series({_b: efficiency_for_channel(int(_b.removeprefix("coinc_ch")), dump_ch=7)
+                     for _b in BINS})
+    return bg, eff
 
 
 @app.cell(hide_code=True)
 def _(
     BINS,
-    DATA_PATH,
-    N,
+    bg,
+    classical_loss,
+    eff,
     np,
     p_exact,
     p_theory,
@@ -289,32 +307,58 @@ def _(
     rates,
     stds,
 ):
-    # background/noise per channel: read from the noise-calibration json that
-    # was in effect for this run (measurement.py points each measurement's
-    # sidecar at the calibration file used, by filename, resolved relative to
-    # this same data dir) — not fit, so it can't silently absorb real
-    # discrepancies. Falls back to zero (no correction) for older
-    # measurements taken before either background source existed.
-    from stochprocsim.utils import background_rate_by_channel
+    # T_classical: per-bin transmission from the classical power-meter loss
+    # estimate (get_loss("classical", ...)).
+    T_classical = pd.Series(1 - np.array(classical_loss), index=BINS)
 
-    _bg_by_ch, _cal_note = background_rate_by_channel(DATA_PATH.with_suffix(".json"))
-    print(f"background used: {_cal_note}")
-    bg = pd.Series({_b: _bg_by_ch.get(_b.removeprefix("coinc_ch"), 0.0) for _b in BINS})
+    frac_classical, yerr_classical = {}, {}
+    for _s in rates.index:
+        _corr = ((rates.loc[_s] - bg) / eff) / T_classical
+        frac_classical[_s] = _corr / _corr.sum()
+        yerr_classical[_s] = ((stds.loc[_s] / eff) / T_classical) / _corr.sum()
+    print(f"s0 (loss-corrected, classical): {np.round(frac_classical[0].to_numpy(), 4)}")
+    plot_state_grid(frac_classical, yerr_classical, p_theory,
+                    f"loss-corrected (classical, bckgnd avg={bg.mean():.2f}) vs theory",
+                    p_exact=p_exact)
+    return
 
-    # detector efficiency: 3 physical detectors (herald / dump / one shared,
-    # time-multiplexed detector for every loop channel), so loop bins all
-    # divide by the same factor and only dump gets its own — see
-    # stochprocsim.utils.DETECTOR_EFFICIENCY (placeholder 1.0 = no
-    # correction until it's actually calibrated)
-    from stochprocsim.utils import efficiency_for_channel
 
-    eff = pd.Series({_b: efficiency_for_channel(int(_b.removeprefix("coinc_ch")), dump_ch=7)
-                     for _b in BINS})
+@app.cell(hide_code=True)
+def _(
+    BINS,
+    bg,
+    eff,
+    np,
+    p_exact,
+    p_theory,
+    pd,
+    plot_state_grid,
+    rates,
+    sp_loss,
+    stds,
+):
+    # T_single_photon: per-bin transmission from the single-photon
+    # coincidence-count loss calibration (get_loss("single_photon", ...)).
+    T_single_photon = pd.Series(1 - np.array(sp_loss), index=BINS)
 
-    # per-loop transmission T fitted against the S0 input distribution only
-    # (bin k has traversed k loops, dump counted like the last exit) — real
-    # optical loss per round trip, separate from detector background/noise/
-    # efficiency. Other measured states aren't used for the fit.
+    frac_single_photon, yerr_single_photon = {}, {}
+    for _s in rates.index:
+        _corr = ((rates.loc[_s] - bg) / eff) / T_single_photon
+        frac_single_photon[_s] = _corr / _corr.sum()
+        yerr_single_photon[_s] = ((stds.loc[_s] / eff) / T_single_photon) / _corr.sum()
+    print(f"s0 (loss-corrected, single photon): {np.round(frac_single_photon[0].to_numpy(), 4)}")
+    plot_state_grid(frac_single_photon, yerr_single_photon, p_theory,
+                    f"loss-corrected (single photon, bckgnd avg={bg.mean():.2f}) vs theory",
+                    p_exact=p_exact)
+    return
+
+
+@app.cell(hide_code=True)
+def _(BINS, N, bg, eff, np, p_exact, p_theory, plot_state_grid, rates, stds):
+    # T_fit: per-loop transmission T fitted against the S0 input distribution
+    # only (bin k has traversed k loops, dump counted like the last exit) —
+    # no direct measurement, just whatever T makes the s0 shape match theory.
+    # Other measured states aren't used for the fit.
     from scipy.optimize import minimize_scalar
 
     _k = np.array([N if _b == "coinc_ch7" else int(_b.removeprefix("coinc_ch")) // 2 for _b in BINS])
@@ -324,67 +368,19 @@ def _(
 
     T_fit = minimize_scalar(_resid, bounds=(0.05, 1), method="bounded").x
     print(f"transmission fit: T = {T_fit:.3f}  residual = {_resid(T_fit):.4f}")
+    T_fit = 0.32
+    transmission_fit = T_fit ** _k
+
     frac, yerr = {}, {}
     for _s in rates.index:
-        _corr = ((rates.loc[_s] - bg) / eff) / T_fit ** _k
+        _corr = ((rates.loc[_s] - bg) / eff) / transmission_fit
         frac[_s] = _corr / _corr.sum()
-        yerr[_s] = ((stds.loc[_s] / eff) / T_fit ** _k) / _corr.sum()
-    print(f"s0 (loss-corrected): {np.round(frac[0].to_numpy(), 4)}")
+        yerr[_s] = ((stds.loc[_s] / eff) / transmission_fit) / _corr.sum()
+    print(f"s0 (loss-corrected, T_fit): {np.round(frac[0].to_numpy(), 4)}")
     plot_state_grid(frac, yerr, p_theory,
-                    f"loss-corrected (bckgnd avg= {bg.mean():.2f}, T={T_fit:.2f}) vs theory",
+                    f"loss-corrected (T_fit={T_fit:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
                     p_exact=p_exact)
     return (frac,)
-
-
-@app.cell(hide_code=True)
-def _(
-    BINS,
-    DATA_PATH,
-    N,
-    calc_loss,
-    np,
-    p_exact,
-    p_theory,
-    pd,
-    plot_state_grid,
-    rates,
-    stds,
-):
-    # same as the T_fit cell above, but the per-bin correction comes from the
-    # measured switch-path transmissions (calc_loss, from the power-meter
-    # ratios in the REALISTIC LOSS ESTIMATION cell) instead of a single
-    # fitted geometric T. calc_loss already returns a *cumulative*
-    # transmission per bin (not per-hop), so no exponent is needed.
-    from stochprocsim.utils import background_rate_by_channel
-
-    _bg_by_ch, _cal_note = background_rate_by_channel(DATA_PATH.with_suffix(".json"))
-    print(f"background used: {_cal_note}")
-    bg = pd.Series({_b: _bg_by_ch.get(_b.removeprefix("coinc_ch"), 0.0) for _b in BINS})
-
-    from stochprocsim.utils import efficiency_for_channel
-
-    eff = pd.Series({_b: efficiency_for_channel(int(_b.removeprefix("coinc_ch")), dump_ch=7)
-                     for _b in BINS})
-
-    _max_k = max(int(_b.removeprefix("coinc_ch")) // 2 for _b in BINS if _b != "coinc_ch7")
-    _loop_loss = calc_loss(_max_k)              # cumulative loss, bins k=1.._max_k
-    _dump_loss = calc_loss(N, isDump=True)[-1]  # cumulative loss through the loop->dump switch
-    meas_trans = pd.Series({
-        _b: 1 - (_dump_loss if _b == "coinc_ch7" else _loop_loss[int(_b.removeprefix("coinc_ch")) // 2 - 1])
-        for _b in BINS
-    })
-    print(f"measured transmission per bin:\n{meas_trans}")
-
-    frac_loss, yerr_loss = {}, {}
-    for _s in rates.index:
-        _corr = ((rates.loc[_s] - bg) / eff) / meas_trans
-        frac_loss[_s] = _corr / _corr.sum()
-        yerr_loss[_s] = ((stds.loc[_s] / eff) / meas_trans) / _corr.sum()
-    print(f"s0 (loss-corrected): {np.round(frac_loss[0].to_numpy(), 4)}")
-    plot_state_grid(frac_loss, yerr_loss, p_theory,
-                    "loss-corrected (measured switch-path transmission) vs theory",
-                    p_exact=p_exact)
-    return (frac_loss,)
 
 
 @app.cell(hide_code=True)
