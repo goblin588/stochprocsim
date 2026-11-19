@@ -75,7 +75,17 @@ def eval_diverge(
         diverge = 0
         for p,q in zip(p_dist_cond,q_dist_cond):
             if (p_his := np.sum(p)) > 1e-10:
-                diverge += p_his * entropy(p/p_his, q/np.sum(q), base=2)
+                # Laplace smoothing on q: a weak experimental channel can
+                # land at exactly 0 for an outcome theory still considers
+                # reachable, and entropy()'s per-element p*log(p/q) term
+                # is +inf wherever q==0 and p>0 -- not just when the whole
+                # bucket (q.sum()) is zero, so a bucket-level guard alone
+                # isn't enough. Adding a tiny constant before renormalizing
+                # keeps q strictly positive everywhere, so this never
+                # blows up; it costs a negligible, bounded bias in
+                # exchange for a number that's always usable.
+                q_smooth = q + 1e-9
+                diverge += p_his * entropy(p/p_his, q_smooth/np.sum(q_smooth), base=2)
         return diverge/(n-his_steps)
     return entropy(p_dist, q_dist, base=2)
 

@@ -1,5 +1,4 @@
 import json
-import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -9,17 +8,6 @@ from scipy.special import rel_entr
 from stochprocsim.stochprocq.models.renewal import RenewalProcess
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_REPO = "https://github.com/goblin588/autoqstochmeasure.git"
-_CLONE_DIR = PROJECT_ROOT / "data" / "autoqstochmeasure"
-
-
-def pull_remote_data():
-    """Clone or fast-forward the measurement repo; return its data/ dir."""
-    if (_CLONE_DIR / ".git").exists():
-        subprocess.run(["git", "-C", str(_CLONE_DIR), "pull", "--ff-only"], check=True)
-    else:
-        subprocess.run(["git", "clone", "--depth", "1", DATA_REPO, str(_CLONE_DIR)], check=True)
-    return _CLONE_DIR / "data"
 
 
 DETECTOR_EFFICIENCY = {
@@ -37,6 +25,18 @@ def efficiency_for_channel(channel: int, herald_ch: int = 3, dump_ch: int = 7) -
     if channel == dump_ch:
         return DETECTOR_EFFICIENCY['dump']
     return DETECTOR_EFFICIENCY['loop']
+
+
+def loop_pass_k(bin_name: str, bins: list[str], dump_bin: str = "coinc_ch7") -> int:
+    """1-indexed physical loop pass for a coincidence-count bin: its
+    position among `bins`' recorded loop channels (ascending), not the
+    channel number itself. The channel-to-pass wiring shifted on
+    2026-11-16 (ch2 was pass 1 before, ch4 is pass 1 after, and the
+    apparatus now always records 6 loop channels regardless of N), but
+    the recorded channels stay in physical pass order either way, so
+    position is the portable invariant -- channel arithmetic (channel //
+    2) is not."""
+    return [b for b in bins if b != dump_bin].index(bin_name) + 1
 
 
 def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
@@ -80,23 +80,28 @@ def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
     return {}, "none (background=0)"
 
 
-def _loss_calibration_meta(json_path: Path) -> tuple[dict, str]:
+def _loss_calibration_meta(json_path: Path, *, require: str) -> tuple[dict, str]:
     """The *_loss_calibration.json content in effect for a specific
     measurement — shared lookup behind loss_calibration_for/loss_rates_for.
 
     Prefers json_path's own "loss_calibration" field — the *entire*
     contents of the *_loss_calibration.json in effect when that
     measurement was saved (current measurement.py behaviour), frozen at
-    save time so it can't drift if calibrate_loss() runs again later.
+    save time so it can't drift if calibrate_loss() runs again later —
+    but only when it actually carries `require`: the embed only ever
+    carries "file"/"stages"/"losses", never the standalone file's own
+    "coincidence_rates_hz", so a caller that needs rates must fall through
+    to the directory lookup below even when an embed is present.
     Falls back to whichever *_loss_calibration.json is most recent next to
     json_path, for older measurements taken before that field was
-    embedded — note that fallback isn't necessarily what was actually in
-    effect for this specific measurement, just the best available guess.
+    embedded, or whenever the embed lacks `require` — note that fallback
+    isn't necessarily what was actually in effect for this specific
+    measurement, just the best available guess.
     Returns ({}, note) if neither is available.
     """
     if json_path.exists():
         cal = json.loads(json_path.read_text()).get("loss_calibration")
-        if cal:
+        if cal and require in cal:
             return cal, f"embedded ({cal.get('file', '?')}, {cal.get('saved_at', '?')})"
 
     files = sorted(json_path.parent.glob("*_loss_calibration.json"), key=lambda p: p.name)
@@ -115,17 +120,18 @@ def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
     1 - transmission. See _loss_calibration_meta for the embedded-vs-
     fallback lookup this reads from.
     """
-    cal, note = _loss_calibration_meta(json_path)
+    cal, note = _loss_calibration_meta(json_path, require="losses")
     return cal.get("losses", {}), note
 
 
 def loss_rates_for(json_path: Path) -> tuple[dict, str]:
     """coincidence_rates_hz dict in effect for a specific measurement — the
-    raw per-stage rates (C0/C0d/C2/C4/Cd/Cin, each with an "_err" SEM
-    companion) that loss_calibration_for's losses were computed from. See
+    raw per-stage rates (loop0_hz = zero-loop-bypass stage, loop1_hz =
+    one-loop-pass stage, each with an "_err" SEM companion) that
+    loss_calibration_for's losses were computed from. See
     _loss_calibration_meta for the embedded-vs-fallback lookup this reads
     from."""
-    cal, note = _loss_calibration_meta(json_path)
+    cal, note = _loss_calibration_meta(json_path, require="coincidence_rates_hz")
     return cal.get("coincidence_rates_hz", {}), note
 
 
@@ -189,13 +195,44 @@ def kl_divergence(p, q) -> float:
     return float(np.sum(rel_entr(p / p.sum(), q / q.sum())) / np.log(2))
 
 
+_SURVIVAL_CUTOFF = 1e-9  # matches stochprocq.meta.StochModel._DEFAULT_CUTOFF
+
+
 def generate_quantum_model(output_distribution) -> RenewalProcess:
-    """Convert a quantum output distribution to an equivalent RenewalProcess."""
-    q_emit = np.asarray(output_distribution, dtype=float)
+    """Convert a quantum output distribution to an equivalent RenewalProcess.
+
+    Floors negative bins to 0 -- background-subtracted experimental counts
+    can dip slightly below zero on shot noise alone, and an unclamped
+    negative q_emit[i] propagates straight through to a negative entry in
+    RenewalProcess's transition matrix. A real 0 is left untouched -- this
+    only catches values strictly below it.
+
+    q_survive_st (the per-step conditional survival probability, "exits
+    now" fraction of whatever's left) is clamped at every step of its own
+    recursion too, not just the raw input: a noisy/truncated
+    output_distribution that doesn't sum to exactly 1 (e.g. a bin dropped
+    for being negative, without renormalizing the rest) can push the
+    recursion's running product past 1 partway through, which flips later
+    steps negative even though every q_emit[i] going in was already >= 0
+    -- same failure, one step downstream.
+
+    That clamp lands in [_SURVIVAL_CUTOFF, 1 - _SURVIVAL_CUTOFF], not
+    [0, 1] -- an exact 0 or 1 here means some branch of the resulting
+    RenewalProcess is permanently unreachable, and eval_diverge divides by
+    that branch's total probability when comparing against a theory model
+    that still considers it reachable (0/0 -> nan, poisoning the whole
+    divergence sum). A noisy experimental fit landing on a hard boundary
+    is a numerical artifact, not a real claim that something is
+    impossible, so it's kept a hair off the edge instead. Exact 0/1 are
+    still correct for the closed-form theory models (get_uniform_renewal
+    etc.) -- this clamp is local to the experimental-data path only.
+    """
+    q_emit = np.clip(np.asarray(output_distribution, dtype=float), 0, None)
     q_survive_st = np.zeros_like(q_emit)
-    q_survive_st[0] = q_emit[0]
+    q_survive_st[0] = np.clip(q_emit[0], _SURVIVAL_CUTOFF, 1 - _SURVIVAL_CUTOFF)
     for i in range(1, len(q_emit)):
-        q_survive_st[i] = q_emit[i] / np.prod(1 - q_survive_st[:i])
+        q_survive_st[i] = np.clip(q_emit[i] / np.prod(1 - q_survive_st[:i]),
+                                   _SURVIVAL_CUTOFF, 1 - _SURVIVAL_CUTOFF)
     return RenewalProcess([1 - q for q in q_survive_st[:-1]])
 
 
@@ -298,11 +335,28 @@ def _demo():
         run_path.write_text(json.dumps({
             "loss_calibration": {"file": "x.json", "saved_at": "x",
                                   "losses": {"det_eff_dump": 0.9},
-                                  "coincidence_rates_hz": {"C2": 10.0, "C4": 4.0}},
+                                  "coincidence_rates_hz": {"loop0_hz": 10.0, "loop1_hz": 4.0}},
         }))
         rates, note = loss_rates_for(run_path)
-        assert rates == {"C2": 10.0, "C4": 4.0}
+        assert rates == {"loop0_hz": 10.0, "loop1_hz": 4.0}
         assert note.startswith("embedded")
+
+        # real measurement.py embed shape: carries "losses"/"stages" but
+        # never "coincidence_rates_hz" -- loss_calibration_for still uses
+        # the embed (it only needs "losses"), but loss_rates_for must fall
+        # through to the directory file instead of silently returning {}
+        (tmp / "20260101_000000_loss_calibration.json").write_text(json.dumps({
+            "coincidence_rates_hz": {"loop0_hz": 99.0, "loop1_hz": 33.0},
+        }))
+        run_path.write_text(json.dumps({
+            "loss_calibration": {"file": "20260101_000000_loss_calibration.json", "saved_at": "x",
+                                  "losses": {"det_eff_dump": 0.9}, "stages": {}},
+        }))
+        losses4, note4 = loss_calibration_for(run_path)
+        assert losses4 == {"det_eff_dump": 0.9} and note4.startswith("embedded")
+        rates2, note5 = loss_rates_for(run_path)
+        assert rates2 == {"loop0_hz": 99.0, "loop1_hz": 33.0}
+        assert "dir fallback" in note5
     print("loss_rates_for: ok")
 
     # ordinary run: no basis column at all -> plain per-state mean/SEM
@@ -362,6 +416,36 @@ def _demo():
     assert np.isclose(dist1.sum(), 1.0)
     assert np.allclose(dist1, [0.0, 0.5, 0.5])
     print("exit_distribution: ok")
+
+    # loop_pass_k: position among recorded loop channels, not channel
+    # arithmetic -- must agree for both the pre-2026-11-16 (ch2=pass1) and
+    # post (ch4=pass1) wiring, since the same bin list shape (ascending
+    # loop channels, dump last) occurs under both conventions
+    old_bins = ["coinc_ch2", "coinc_ch4", "coinc_ch6", "coinc_ch7"]
+    assert [loop_pass_k(b, old_bins) for b in old_bins[:-1]] == [1, 2, 3]
+    new_bins = ["coinc_ch4", "coinc_ch6", "coinc_ch8", "coinc_ch10", "coinc_ch12", "coinc_ch14", "coinc_ch7"]
+    assert [loop_pass_k(b, new_bins) for b in new_bins[:-1]] == [1, 2, 3, 4, 5, 6]
+    print("loop_pass_k: ok")
+
+    # generate_quantum_model: a background-over-subtracted bin going
+    # slightly negative must not produce a negative transition-matrix
+    # entry (RenewalProcess._check_valid raises ValueError on that), and
+    # must land on exactly the same result as a real 0 there -- clamping
+    # doesn't perturb an already-valid 0, it only catches what's below it
+    model = generate_quantum_model([0.5, -0.02, 0.3, 0.22])
+    assert not np.any(model.transitions < 0)
+    model_with_zero = generate_quantum_model([0.5, 0.0, 0.3, 0.22])
+    assert np.allclose(model.probs, model_with_zero.probs)
+
+    # same failure one step downstream: every bin here is individually
+    # >= 0, but they don't sum to 1 (a negative bin got dropped elsewhere
+    # without renormalizing the rest, e.g. a 6-channel distribution
+    # truncated to N=4 after losing a negative ch12) -- the running
+    # survival-probability product overshoots 1 partway through and goes
+    # negative from there on, unless q_survive_st itself is also clamped
+    real_n4_case = generate_quantum_model([0.32116471, 0.43705113, 0.25965067, 0.03681412])
+    assert not np.any(real_n4_case.transitions < 0)
+    print("generate_quantum_model: ok")
 
 
 if __name__ == "__main__":
