@@ -1,0 +1,195 @@
+{
+ "started_at": "2026-11-23T15:49:03.404512",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-23T15:49:03.404555",
+   "status": "ok",
+   "elapsed_s": 1581.0276987000002,
+   "finished_at": "2026-11-23T16:15:24.415177"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T16:15:24.416877",
+   "status": "ok",
+   "elapsed_s": 326.6863033000004,
+   "finished_at": "2026-11-23T16:20:51.110199"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T16:20:51.110753",
+   "status": "ok",
+   "elapsed_s": 113.39806699999917,
+   "finished_at": "2026-11-23T16:22:44.519202"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T16:22:44.519964",
+   "status": "ok",
+   "elapsed_s": 517.6480856000007,
+   "finished_at": "2026-11-23T16:31:22.179860"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T16:31:22.181455",
+   "status": "ok",
+   "elapsed_s": 455.3582600999998,
+   "finished_at": "2026-11-23T16:38:57.555771"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T16:38:57.556917",
+   "status": "ok",
+   "elapsed_s": 309.0949638000002,
+   "finished_at": "2026-11-23T16:44:06.663473"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T16:44:06.664182",
+   "status": "ok",
+   "elapsed_s": 113.34707150000031,
+   "finished_at": "2026-11-23T16:46:00.024339"
+  },
+  {
+   "index": 8,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T16:46:00.026278",
+   "status": "ok",
+   "elapsed_s": 517.5229579999996,
+   "finished_at": "2026-11-23T16:54:37.566705"
+  },
+  {
+   "index": 9,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T16:54:37.567655",
+   "status": "ok",
+   "elapsed_s": 456.2951045,
+   "finished_at": "2026-11-23T17:02:13.881360"
+  },
+  {
+   "index": 10,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T17:02:13.882163",
+   "status": "ok",
+   "elapsed_s": 470.8002027000002,
+   "finished_at": "2026-11-23T17:10:04.698760"
+  },
+  {
+   "index": 11,
+   "step": {
+    "type": "measurement",
+    "N": "6",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-23T17:10:04.699556",
+   "status": "ok",
+   "elapsed_s": 457.0322421999999,
+   "finished_at": "2026-11-23T17:17:41.749295"
+  },
+  {
+   "index": 12,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T17:17:41.750021",
+   "status": "ok",
+   "elapsed_s": 338.23063900000034,
+   "finished_at": "2026-11-23T17:23:19.994216"
+  },
+  {
+   "index": 13,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T17:23:19.995125",
+   "status": "ok",
+   "elapsed_s": 113.31653599999936,
+   "finished_at": "2026-11-23T17:25:13.332832"
+  }
+ ],
+ "finished_at": "2026-11-23T17:25:13.334069",
+ "ok": 13,
+ "failed": 0
+}

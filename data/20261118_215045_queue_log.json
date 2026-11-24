@@ -1,0 +1,105 @@
+{
+ "started_at": "2026-11-18T21:50:45.716358",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-18T21:50:45.716374",
+   "status": "ok",
+   "elapsed_s": 633.251959199988,
+   "finished_at": "2026-11-18T22:01:18.988827"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-18T22:01:18.989704",
+   "status": "ok",
+   "elapsed_s": 348.4153437000059,
+   "finished_at": "2026-11-18T22:07:07.418721"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-18T22:07:07.419438",
+   "status": "ok",
+   "elapsed_s": 113.36338920000708,
+   "finished_at": "2026-11-18T22:09:00.799365"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": "all",
+    "tomo": false,
+    "duration_s": 3600.0
+   },
+   "started_at": "2026-11-18T22:09:00.800479",
+   "status": "ok",
+   "elapsed_s": 17138.042081199994,
+   "finished_at": "2026-11-19T02:54:38.455394"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": "all",
+    "tomo": false,
+    "duration_s": 1800.0
+   },
+   "started_at": "2026-11-19T02:54:38.456083",
+   "status": "ok",
+   "elapsed_s": 20535.6328698,
+   "finished_at": "2026-11-19T08:36:53.928738"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": "all",
+    "tomo": false,
+    "duration_s": 1800.0
+   },
+   "started_at": "2026-11-19T08:36:53.930616",
+   "status": "ok",
+   "elapsed_s": 7522.102118299983,
+   "finished_at": "2026-11-19T10:42:15.863789"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 1800.0
+   },
+   "started_at": "2026-11-19T10:42:15.864631",
+   "status": "ok",
+   "elapsed_s": 1983.2015277999744,
+   "finished_at": "2026-11-19T11:15:19.062428"
+  }
+ ],
+ "finished_at": "2026-11-19T11:15:19.063449",
+ "ok": 7,
+ "failed": 0
+}

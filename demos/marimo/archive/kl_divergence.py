@@ -12,7 +12,6 @@ def _():
     from stochprocsim.stochprocq import get_uniform_renewal
     from stochprocsim.models.causal_models import Causal_Models
     from stochprocsim.utils import kl_divergence
-
     return Causal_Models, get_uniform_renewal, kl_divergence, mo, np
 
 
@@ -72,7 +71,13 @@ def _(Causal_Models, get_uniform_renewal, kl_divergence, np):
             stat_probs[i] * kl_divergence(*exit_dists(CS, N, i))
             for i in range(N)
         )
-        print(f'R_KL[P||Q] (N={N}): {r_kl:.6f} bits')
+        # print(f'R_KL[P||Q] (N={N}): {r_kl:.6f} bits')
+
+    N=3
+    CS = Causal_Models[N]
+    CS.set_U(CS.U_theo)
+    stat_probs = get_uniform_renewal(N-1).steady_state
+    print(stat_probs)
     return
 
 

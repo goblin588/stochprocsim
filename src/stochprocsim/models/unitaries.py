@@ -67,3 +67,16 @@ U_3_states = [_embed(s) for s in [s001, s010, s100, s000]]
 U_4_states = [_embed(s) for s in [s0001, s0010, s0100, s1000, s0000]]
 U_5_states = [_embed(s) for s in [s00001, s00010, s00100, s01000, s10000, s00000]]
 U_6_states = [_embed(s) for s in [s000001, s000010, s000100, s001000, s010000, s100000, s000000]]
+
+# Independently-derived "true theory" output polarisation state at each
+# loop-exit channel (one entry per loop step, i.e. N entries for process
+# length N), as given by the group's theorists -- distinct from model.U's
+# own predicted output states, since model.U may not account for the real
+# apparatus's missing output waveplates. Placeholders (None) until filled
+# in with the real 2-component complex state vectors.
+TRUE_OUTPUT_STATES = {
+    3: [None, None, None],
+    4: [None, None, None, None],
+    5: [None, None, None, None, None],
+    6: [None, None, None, None, None, None],
+}

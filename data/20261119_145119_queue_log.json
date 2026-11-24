@@ -1,0 +1,101 @@
+{
+ "started_at": "2026-11-19T14:51:19.374014",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-19T14:51:19.374027",
+   "status": "ok",
+   "elapsed_s": 746.5137522000005,
+   "finished_at": "2026-11-19T15:03:45.886834"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-19T15:03:45.887776",
+   "status": "ok",
+   "elapsed_s": 314.7950666999677,
+   "finished_at": "2026-11-19T15:09:00.694002"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-19T15:09:00.694759",
+   "status": "ok",
+   "elapsed_s": 118.41365550004411,
+   "finished_at": "2026-11-19T15:10:59.126605"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-19T15:10:59.127292",
+   "status": "ok",
+   "elapsed_s": 826.1490300000296,
+   "finished_at": "2026-11-19T15:24:45.294044"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-19T15:24:45.295158",
+   "status": "ok",
+   "elapsed_s": 773.1665063999826,
+   "finished_at": "2026-11-19T15:37:38.484281"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-19T15:37:38.485132",
+   "status": "ok",
+   "elapsed_s": 308.95965510001406,
+   "finished_at": "2026-11-19T15:42:47.457108"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-19T15:42:47.457958",
+   "status": "ok",
+   "elapsed_s": 123.36606639996171,
+   "finished_at": "2026-11-19T15:44:50.835349"
+  }
+ ],
+ "finished_at": "2026-11-19T15:44:50.836317",
+ "ok": 7,
+ "failed": 0
+}

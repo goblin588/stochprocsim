@@ -1,0 +1,647 @@
+{
+ "N": "6",
+ "label": "all",
+ "delays_ns": {
+  "3": 3841,
+  "4": 2968.2841365388845,
+  "6": 2535.3165253942266,
+  "7": 1215.2208333333333,
+  "8": 2101.9066817915445,
+  "10": 1666.4029499299716,
+  "12": 1235.0762998344667,
+  "14": 813.3762626262627
+ },
+ "thresholds_v": {
+  "3": 0.1,
+  "4": 0.05,
+  "6": 0.05,
+  "8": 0.05,
+  "10": 0.05,
+  "12": 0.05,
+  "14": 0.05,
+  "7": 0.1
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "77eb840",
+ "saved_at": "2026-11-23T02:00:42.979781",
+ "noise_calibration": {
+  "counts": {
+   "herald": 7604996,
+   "singles_ch4": 257049,
+   "coinc_ch4": 141,
+   "singles_ch6": 258547,
+   "coinc_ch6": 96,
+   "singles_ch8": 258444,
+   "coinc_ch8": 45,
+   "singles_ch10": 258446,
+   "coinc_ch10": 45,
+   "singles_ch12": 258473,
+   "coinc_ch12": 37,
+   "singles_ch14": 257991,
+   "coinc_ch14": 222,
+   "singles_ch7": 0,
+   "coinc_ch7": 0,
+   "int_time": 60.028652900015004
+  },
+  "offset_ns": 15.0,
+  "background_rate_hz": {
+   "4": 2.3488782970834374,
+   "6": 1.5992362873759576,
+   "8": 0.7496420097074801,
+   "10": 0.7496420097074801,
+   "12": 0.616372319092817,
+   "14": 3.698233914556902,
+   "7": 0.0
+  },
+  "duration_s": 60.0,
+  "saved_at": "2026-11-20T23:20:23.304786",
+  "git_commit": "6817561",
+  "file": "20261120_232023_noise_calibration.json"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 13051523,
+  "singles_ch4": 947147,
+  "coinc_ch4": 620,
+  "singles_ch6": 952071,
+  "coinc_ch6": 183,
+  "singles_ch8": 951644,
+  "coinc_ch8": 122,
+  "singles_ch10": 951695,
+  "coinc_ch10": 118,
+  "singles_ch12": 951809,
+  "coinc_ch12": 119,
+  "singles_ch14": 950055,
+  "coinc_ch14": 975,
+  "singles_ch7": 0,
+  "coinc_ch7": 0,
+  "int_time": 100.57604449999599,
+  "bins": [
+   {
+    "timestamp": "2026-11-23T00:04:52.813640",
+    "herald": 653481,
+    "singles_ch4": 47332,
+    "coinc_ch4": 26,
+    "singles_ch6": 47541,
+    "coinc_ch6": 8,
+    "singles_ch8": 47525,
+    "coinc_ch8": 7,
+    "singles_ch10": 47526,
+    "coinc_ch10": 3,
+    "singles_ch12": 47532,
+    "coinc_ch12": 5,
+    "singles_ch14": 47458,
+    "coinc_ch14": 41,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.026803699998709
+   },
+   {
+    "timestamp": "2026-11-23T00:04:57.842516",
+    "herald": 650736,
+    "singles_ch4": 47255,
+    "coinc_ch4": 21,
+    "singles_ch6": 47499,
+    "coinc_ch6": 9,
+    "singles_ch8": 47469,
+    "coinc_ch8": 12,
+    "singles_ch10": 47480,
+    "coinc_ch10": 10,
+    "singles_ch12": 47482,
+    "coinc_ch12": 6,
+    "singles_ch14": 47393,
+    "coinc_ch14": 43,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028666599999269
+   },
+   {
+    "timestamp": "2026-11-23T00:05:02.872216",
+    "herald": 651081,
+    "singles_ch4": 47563,
+    "coinc_ch4": 30,
+    "singles_ch6": 47812,
+    "coinc_ch6": 6,
+    "singles_ch8": 47789,
+    "coinc_ch8": 6,
+    "singles_ch10": 47797,
+    "coinc_ch10": 4,
+    "singles_ch12": 47801,
+    "coinc_ch12": 4,
+    "singles_ch14": 47725,
+    "coinc_ch14": 44,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029311600001165
+   },
+   {
+    "timestamp": "2026-11-23T00:05:07.901160",
+    "herald": 652186,
+    "singles_ch4": 47459,
+    "coinc_ch4": 38,
+    "singles_ch6": 47732,
+    "coinc_ch6": 7,
+    "singles_ch8": 47711,
+    "coinc_ch8": 6,
+    "singles_ch10": 47715,
+    "coinc_ch10": 5,
+    "singles_ch12": 47719,
+    "coinc_ch12": 6,
+    "singles_ch14": 47616,
+    "coinc_ch14": 45,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0285935000010795
+   },
+   {
+    "timestamp": "2026-11-23T00:05:12.931085",
+    "herald": 654246,
+    "singles_ch4": 47627,
+    "coinc_ch4": 40,
+    "singles_ch6": 47862,
+    "coinc_ch6": 12,
+    "singles_ch8": 47840,
+    "coinc_ch8": 9,
+    "singles_ch10": 47840,
+    "coinc_ch10": 5,
+    "singles_ch12": 47845,
+    "coinc_ch12": 12,
+    "singles_ch14": 47769,
+    "coinc_ch14": 53,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029563199999757
+   },
+   {
+    "timestamp": "2026-11-23T00:05:17.960205",
+    "herald": 652269,
+    "singles_ch4": 47263,
+    "coinc_ch4": 34,
+    "singles_ch6": 47524,
+    "coinc_ch6": 5,
+    "singles_ch8": 47508,
+    "coinc_ch8": 5,
+    "singles_ch10": 47506,
+    "coinc_ch10": 4,
+    "singles_ch12": 47510,
+    "coinc_ch12": 7,
+    "singles_ch14": 47409,
+    "coinc_ch14": 44,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028673199998593
+   },
+   {
+    "timestamp": "2026-11-23T00:05:22.989339",
+    "herald": 652140,
+    "singles_ch4": 47715,
+    "coinc_ch4": 40,
+    "singles_ch6": 47955,
+    "coinc_ch6": 5,
+    "singles_ch8": 47927,
+    "coinc_ch8": 2,
+    "singles_ch10": 47929,
+    "coinc_ch10": 6,
+    "singles_ch12": 47937,
+    "coinc_ch12": 7,
+    "singles_ch14": 47858,
+    "coinc_ch14": 54,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028692699999738
+   },
+   {
+    "timestamp": "2026-11-23T00:05:28.017998",
+    "herald": 653302,
+    "singles_ch4": 47279,
+    "coinc_ch4": 23,
+    "singles_ch6": 47539,
+    "coinc_ch6": 11,
+    "singles_ch8": 47522,
+    "coinc_ch8": 8,
+    "singles_ch10": 47522,
+    "coinc_ch10": 4,
+    "singles_ch12": 47529,
+    "coinc_ch12": 4,
+    "singles_ch14": 47440,
+    "coinc_ch14": 58,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028317399999651
+   },
+   {
+    "timestamp": "2026-11-23T00:05:33.048421",
+    "herald": 653158,
+    "singles_ch4": 47683,
+    "coinc_ch4": 26,
+    "singles_ch6": 47910,
+    "coinc_ch6": 12,
+    "singles_ch8": 47891,
+    "coinc_ch8": 5,
+    "singles_ch10": 47894,
+    "coinc_ch10": 5,
+    "singles_ch12": 47902,
+    "coinc_ch12": 10,
+    "singles_ch14": 47814,
+    "coinc_ch14": 43,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0301131999985955
+   },
+   {
+    "timestamp": "2026-11-23T00:05:38.077677",
+    "herald": 652135,
+    "singles_ch4": 47141,
+    "coinc_ch4": 35,
+    "singles_ch6": 47382,
+    "coinc_ch6": 6,
+    "singles_ch8": 47364,
+    "coinc_ch8": 3,
+    "singles_ch10": 47365,
+    "coinc_ch10": 6,
+    "singles_ch12": 47367,
+    "coinc_ch12": 4,
+    "singles_ch14": 47297,
+    "coinc_ch14": 45,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028962799999135
+   },
+   {
+    "timestamp": "2026-11-23T00:05:43.107029",
+    "herald": 651813,
+    "singles_ch4": 46759,
+    "coinc_ch4": 29,
+    "singles_ch6": 46995,
+    "coinc_ch6": 10,
+    "singles_ch8": 46978,
+    "coinc_ch8": 5,
+    "singles_ch10": 46980,
+    "coinc_ch10": 6,
+    "singles_ch12": 46988,
+    "coinc_ch12": 5,
+    "singles_ch14": 46897,
+    "coinc_ch14": 61,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029037399999652
+   },
+   {
+    "timestamp": "2026-11-23T00:05:48.135940",
+    "herald": 652378,
+    "singles_ch4": 47372,
+    "coinc_ch4": 23,
+    "singles_ch6": 47654,
+    "coinc_ch6": 11,
+    "singles_ch8": 47624,
+    "coinc_ch8": 8,
+    "singles_ch10": 47627,
+    "coinc_ch10": 9,
+    "singles_ch12": 47636,
+    "coinc_ch12": 4,
+    "singles_ch14": 47530,
+    "coinc_ch14": 45,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028621399998883
+   },
+   {
+    "timestamp": "2026-11-23T00:05:53.165205",
+    "herald": 653218,
+    "singles_ch4": 47727,
+    "coinc_ch4": 26,
+    "singles_ch6": 47954,
+    "coinc_ch6": 8,
+    "singles_ch8": 47935,
+    "coinc_ch8": 5,
+    "singles_ch10": 47937,
+    "coinc_ch10": 4,
+    "singles_ch12": 47942,
+    "coinc_ch12": 2,
+    "singles_ch14": 47857,
+    "coinc_ch14": 55,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028879400000733
+   },
+   {
+    "timestamp": "2026-11-23T00:05:58.193864",
+    "herald": 652941,
+    "singles_ch4": 47194,
+    "coinc_ch4": 39,
+    "singles_ch6": 47439,
+    "coinc_ch6": 4,
+    "singles_ch8": 47412,
+    "coinc_ch8": 2,
+    "singles_ch10": 47416,
+    "coinc_ch10": 11,
+    "singles_ch12": 47422,
+    "coinc_ch12": 7,
+    "singles_ch14": 47332,
+    "coinc_ch14": 58,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0284377000007225
+   },
+   {
+    "timestamp": "2026-11-23T00:06:03.222676",
+    "herald": 653496,
+    "singles_ch4": 47249,
+    "coinc_ch4": 40,
+    "singles_ch6": 47492,
+    "coinc_ch6": 13,
+    "singles_ch8": 47470,
+    "coinc_ch8": 3,
+    "singles_ch10": 47472,
+    "coinc_ch10": 3,
+    "singles_ch12": 47479,
+    "coinc_ch12": 5,
+    "singles_ch14": 47395,
+    "coinc_ch14": 63,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028476400000727
+   },
+   {
+    "timestamp": "2026-11-23T00:06:08.252251",
+    "herald": 651652,
+    "singles_ch4": 47611,
+    "coinc_ch4": 23,
+    "singles_ch6": 47841,
+    "coinc_ch6": 13,
+    "singles_ch8": 47818,
+    "coinc_ch8": 7,
+    "singles_ch10": 47814,
+    "coinc_ch10": 3,
+    "singles_ch12": 47824,
+    "coinc_ch12": 5,
+    "singles_ch14": 47738,
+    "coinc_ch14": 50,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029234399999041
+   },
+   {
+    "timestamp": "2026-11-23T00:06:13.281250",
+    "herald": 653474,
+    "singles_ch4": 47344,
+    "coinc_ch4": 28,
+    "singles_ch6": 47588,
+    "coinc_ch6": 18,
+    "singles_ch8": 47564,
+    "coinc_ch8": 6,
+    "singles_ch10": 47568,
+    "coinc_ch10": 10,
+    "singles_ch12": 47577,
+    "coinc_ch12": 7,
+    "singles_ch14": 47481,
+    "coinc_ch14": 39,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028666999998677
+   },
+   {
+    "timestamp": "2026-11-23T00:06:18.311053",
+    "herald": 652643,
+    "singles_ch4": 47414,
+    "coinc_ch4": 26,
+    "singles_ch6": 47679,
+    "coinc_ch6": 6,
+    "singles_ch8": 47662,
+    "coinc_ch8": 11,
+    "singles_ch10": 47663,
+    "coinc_ch10": 8,
+    "singles_ch12": 47666,
+    "coinc_ch12": 8,
+    "singles_ch14": 47577,
+    "coinc_ch14": 34,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029408899999908
+   },
+   {
+    "timestamp": "2026-11-23T00:06:23.340417",
+    "herald": 652377,
+    "singles_ch4": 47403,
+    "coinc_ch4": 38,
+    "singles_ch6": 47661,
+    "coinc_ch6": 10,
+    "singles_ch8": 47637,
+    "coinc_ch8": 6,
+    "singles_ch10": 47642,
+    "coinc_ch10": 7,
+    "singles_ch12": 47647,
+    "coinc_ch12": 3,
+    "singles_ch14": 47549,
+    "coinc_ch14": 50,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029022800001258
+   },
+   {
+    "timestamp": "2026-11-23T00:06:28.369269",
+    "herald": 652797,
+    "singles_ch4": 46757,
+    "coinc_ch4": 35,
+    "singles_ch6": 47012,
+    "coinc_ch6": 9,
+    "singles_ch8": 46998,
+    "coinc_ch8": 6,
+    "singles_ch10": 47002,
+    "coinc_ch10": 5,
+    "singles_ch12": 47004,
+    "coinc_ch12": 8,
+    "singles_ch14": 46920,
+    "coinc_ch14": 50,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028561200000695
+   }
+  ]
+ },
+ "loss_calibration": {
+  "file": "20261123_000249_loss_calibration.json",
+  "stages": {
+   "source_dump": {
+    "mean_hz": 33748.15539516051,
+    "std_hz": 0.0
+   },
+   "source": {
+    "mean_hz": 42411.47986058565,
+    "std_hz": 0.0
+   },
+   "ch2": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "ch4": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "dump": {
+    "mean_hz": 7599.8711673077205,
+    "std_hz": 46.201803250903005
+   },
+   "input": {
+    "mean_hz": 26456.400180766504,
+    "std_hz": 87.86725619670804
+   },
+   "straight_dump": {
+    "mean_hz": 15521.852635494266,
+    "std_hz": 51.45784401535173
+   },
+   "ch5050_exit": {
+    "mean_hz": 4357.036222755327,
+    "std_hz": 26.8546081870267
+   },
+   "ch5050_loop": {
+    "mean_hz": 672.9986571594171,
+    "std_hz": 18.16928718287644
+   },
+   "fifty_fifty_all_channels": {
+    "4": {
+     "mean_hz": 9374.075326886486,
+     "std_hz": 36.62731393830553
+    },
+    "6": {
+     "mean_hz": 1874.4364606069375,
+     "std_hz": 21.99477023080483
+    },
+    "8": {
+     "mean_hz": 326.18606770875266,
+     "std_hz": 9.906577646647305
+    },
+    "10": {
+     "mean_hz": 56.14232428243055,
+     "std_hz": 3.348917579034651
+    },
+    "12": {
+     "mean_hz": 11.20461226252226,
+     "std_hz": 1.4285026685482962
+    },
+    "14": {
+     "mean_hz": 12.52692227730972,
+     "std_hz": 1.1327671783429127
+    }
+   },
+   "zero_loop_output": {
+    "mean_hz": 19346.760543563556,
+    "std_hz": 63.76860420530448
+   },
+   "one_loop": {
+    "mean_hz": 6084.315292428493,
+    "std_hz": 33.70037727052042
+   },
+   "thirty_seventy_all_channels": {
+    "4": {
+     "mean_hz": 5504.548453477767,
+     "std_hz": 33.87527607922471
+    },
+    "6": {
+     "mean_hz": 1435.597684703025,
+     "std_hz": 11.983138707385036
+    },
+    "8": {
+     "mean_hz": 344.979665895485,
+     "std_hz": 9.046952117118524
+    },
+    "10": {
+     "mean_hz": 65.21550077631632,
+     "std_hz": 3.562721730012681
+    },
+    "12": {
+     "mean_hz": 12.180050447646703,
+     "std_hz": 1.7500953691246615
+    },
+    "14": {
+     "mean_hz": 7.417456813581126,
+     "std_hz": 1.24483950744589
+    }
+   }
+  },
+  "losses": {
+   "loss_per_loop_pass": 0.3144875483793939,
+   "loss_per_loop_pass_err": 0.00045325247369495367,
+   "loss_per_loop_pass_5050": 0.3616579771572679,
+   "loss_per_loop_pass_5050_err": 0.009177289903749835,
+   "loss_per_loop_pass_split30": 0.35206133466135836,
+   "loss_per_loop_pass_split30_err": 0.028644755290403938
+  }
+ },
+ "angles": [
+  {
+   "setting": "unitary",
+   "HWP_IN_2": 181.20705999999998,
+   "QWP_IN_2": 126.61887999999999,
+   "HWP_OUT_2": 324.11867,
+   "QWP_OUT_2": 328.16074,
+   "HWP_TOM_1": 264.56285,
+   "QWP_TOM_1": 118.30968,
+   "HWP_1": 89.96379999999999,
+   "QWP_1": 269.96365,
+   "HWP_12": 343.24501,
+   "QWP_12": 206.39999
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 39.31322,
+   "QWP_IN": 50.31165
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 31.08518000000001,
+   "QWP_IN": 46.68931
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 199.57929000000001,
+   "QWP_IN": 135.09052
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 23.21838000000001,
+   "QWP_IN": 133.96669
+  },
+  {
+   "setting": "s4",
+   "input_state": 4,
+   "basis": null,
+   "HWP_IN": 105.84993,
+   "QWP_IN": 42.73584
+  },
+  {
+   "setting": "s5",
+   "input_state": 5,
+   "basis": null,
+   "HWP_IN": 279.75247,
+   "QWP_IN": 40.71896
+  },
+  {
+   "setting": "s6",
+   "input_state": 6,
+   "basis": null,
+   "HWP_IN": 214.14893999999998,
+   "QWP_IN": 123.39065
+  }
+ ]
+}

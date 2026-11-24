@@ -1,0 +1,26 @@
+{
+ "started_at": "2026-11-11T19:14:50.760006",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-11T19:14:50.760022",
+   "status": "ok",
+   "finished_at": "2026-11-11T19:16:11.061717"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-11T19:16:11.063395",
+   "status": "ok",
+   "finished_at": "2026-11-11T19:16:25.235259"
+  }
+ ],
+ "stopped_by": "KeyboardInterrupt"
+}

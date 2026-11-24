@@ -1,0 +1,33 @@
+{
+ "counts": {
+  "herald": 0,
+  "singles_ch2": 18350,
+  "coinc_ch2": 0,
+  "singles_ch4": 18350,
+  "coinc_ch4": 0,
+  "singles_ch6": 18350,
+  "coinc_ch6": 0,
+  "singles_ch8": 18350,
+  "coinc_ch8": 0,
+  "singles_ch10": 18350,
+  "coinc_ch10": 0,
+  "singles_ch12": 18350,
+  "coinc_ch12": 0,
+  "singles_ch7": 0,
+  "coinc_ch7": 0,
+  "int_time": 10.030255499994382
+ },
+ "offset_ns": 15.0,
+ "background_rate_hz": {
+  "2": 0.0,
+  "4": 0.0,
+  "6": 0.0,
+  "8": 0.0,
+  "10": 0.0,
+  "12": 0.0,
+  "7": 0.0
+ },
+ "duration_s": 10.0,
+ "saved_at": "2026-08-10T19:40:37.063010",
+ "git_commit": "ae8d549"
+}

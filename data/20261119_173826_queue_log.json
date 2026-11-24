@@ -1,0 +1,56 @@
+{
+ "started_at": "2026-11-19T17:38:26.557457",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": true,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-19T17:38:26.557480",
+   "status": "ok",
+   "elapsed_s": 2127.104190199985,
+   "finished_at": "2026-11-19T18:13:53.604406"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": true,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-19T18:13:53.605409",
+   "status": "ok",
+   "elapsed_s": 2064.2953798000235,
+   "finished_at": "2026-11-19T18:48:17.827067"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": true,
+    "duration_s": 120.0
+   },
+   "started_at": "2026-11-19T18:48:17.827807",
+   "status": "ok",
+   "elapsed_s": 1563.2789995999774,
+   "finished_at": "2026-11-19T19:14:21.066285"
+  }
+ ],
+ "finished_at": "2026-11-19T19:14:21.067077",
+ "ok": 3,
+ "failed": 0
+}

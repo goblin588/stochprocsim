@@ -1,0 +1,654 @@
+{
+ "N": "3",
+ "label": "all",
+ "delays_ns": {
+  "3": 3841,
+  "4": 2968.2841365388845,
+  "6": 2535.3165253942266,
+  "7": 1215.2208333333333,
+  "8": 2101.9066817915445,
+  "10": 1666.4029499299716,
+  "12": 1235.0762998344667,
+  "14": 813.3762626262627
+ },
+ "thresholds_v": {
+  "3": 0.1,
+  "4": 0.05,
+  "6": 0.05,
+  "8": 0.05,
+  "10": 0.05,
+  "12": 0.05,
+  "14": 0.05,
+  "7": 0.1
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "77eb840",
+ "saved_at": "2026-11-23T08:27:08.251580",
+ "noise_calibration": {
+  "counts": {
+   "herald": 7604996,
+   "singles_ch4": 257049,
+   "coinc_ch4": 141,
+   "singles_ch6": 258547,
+   "coinc_ch6": 96,
+   "singles_ch8": 258444,
+   "coinc_ch8": 45,
+   "singles_ch10": 258446,
+   "coinc_ch10": 45,
+   "singles_ch12": 258473,
+   "coinc_ch12": 37,
+   "singles_ch14": 257991,
+   "coinc_ch14": 222,
+   "singles_ch7": 0,
+   "coinc_ch7": 0,
+   "int_time": 60.028652900015004
+  },
+  "offset_ns": 15.0,
+  "background_rate_hz": {
+   "4": 2.3488782970834374,
+   "6": 1.5992362873759576,
+   "8": 0.7496420097074801,
+   "10": 0.7496420097074801,
+   "12": 0.616372319092817,
+   "14": 3.698233914556902,
+   "7": 0.0
+  },
+  "duration_s": 60.0,
+  "saved_at": "2026-11-20T23:20:23.304786",
+  "git_commit": "6817561",
+  "file": "20261120_232023_noise_calibration.json"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 538,
+  "singles_ch4": 726,
+  "coinc_ch4": 0,
+  "singles_ch6": 715,
+  "coinc_ch6": 0,
+  "singles_ch8": 723,
+  "coinc_ch8": 0,
+  "singles_ch10": 718,
+  "coinc_ch10": 0,
+  "singles_ch12": 716,
+  "coinc_ch12": 0,
+  "singles_ch14": 725,
+  "coinc_ch14": 0,
+  "singles_ch7": 0,
+  "coinc_ch7": 0,
+  "int_time": 100.58002229999693,
+  "bins": [
+   {
+    "timestamp": "2026-11-23T04:44:43.467467",
+    "herald": 10,
+    "singles_ch4": 24,
+    "coinc_ch4": 0,
+    "singles_ch6": 23,
+    "coinc_ch6": 0,
+    "singles_ch8": 23,
+    "coinc_ch8": 0,
+    "singles_ch10": 23,
+    "coinc_ch10": 0,
+    "singles_ch12": 23,
+    "coinc_ch12": 0,
+    "singles_ch14": 23,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028458299999329
+   },
+   {
+    "timestamp": "2026-11-23T04:44:48.497402",
+    "herald": 21,
+    "singles_ch4": 36,
+    "coinc_ch4": 0,
+    "singles_ch6": 36,
+    "coinc_ch6": 0,
+    "singles_ch8": 36,
+    "coinc_ch8": 0,
+    "singles_ch10": 36,
+    "coinc_ch10": 0,
+    "singles_ch12": 36,
+    "coinc_ch12": 0,
+    "singles_ch14": 36,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029606600000989
+   },
+   {
+    "timestamp": "2026-11-23T04:44:53.526243",
+    "herald": 3,
+    "singles_ch4": 21,
+    "coinc_ch4": 0,
+    "singles_ch6": 21,
+    "coinc_ch6": 0,
+    "singles_ch8": 21,
+    "coinc_ch8": 0,
+    "singles_ch10": 21,
+    "coinc_ch10": 0,
+    "singles_ch12": 21,
+    "coinc_ch12": 0,
+    "singles_ch14": 21,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028456099997129
+   },
+   {
+    "timestamp": "2026-11-23T04:44:58.556209",
+    "herald": 3,
+    "singles_ch4": 13,
+    "coinc_ch4": 0,
+    "singles_ch6": 13,
+    "coinc_ch6": 0,
+    "singles_ch8": 13,
+    "coinc_ch8": 0,
+    "singles_ch10": 13,
+    "coinc_ch10": 0,
+    "singles_ch12": 13,
+    "coinc_ch12": 0,
+    "singles_ch14": 13,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029629399999976
+   },
+   {
+    "timestamp": "2026-11-23T04:45:03.585278",
+    "herald": 8,
+    "singles_ch4": 23,
+    "coinc_ch4": 0,
+    "singles_ch6": 21,
+    "coinc_ch6": 0,
+    "singles_ch8": 22,
+    "coinc_ch8": 0,
+    "singles_ch10": 21,
+    "coinc_ch10": 0,
+    "singles_ch12": 21,
+    "coinc_ch12": 0,
+    "singles_ch14": 22,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0286637999997765
+   },
+   {
+    "timestamp": "2026-11-23T04:45:08.613850",
+    "herald": 5,
+    "singles_ch4": 14,
+    "coinc_ch4": 0,
+    "singles_ch6": 14,
+    "coinc_ch6": 0,
+    "singles_ch8": 14,
+    "coinc_ch8": 0,
+    "singles_ch10": 14,
+    "coinc_ch10": 0,
+    "singles_ch12": 14,
+    "coinc_ch12": 0,
+    "singles_ch14": 14,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028333599999314
+   },
+   {
+    "timestamp": "2026-11-23T04:45:18.673601",
+    "herald": 5,
+    "singles_ch4": 8,
+    "coinc_ch4": 0,
+    "singles_ch6": 8,
+    "coinc_ch6": 0,
+    "singles_ch8": 8,
+    "coinc_ch8": 0,
+    "singles_ch10": 8,
+    "coinc_ch10": 0,
+    "singles_ch12": 8,
+    "coinc_ch12": 0,
+    "singles_ch14": 8,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029819900002622
+   },
+   {
+    "timestamp": "2026-11-23T04:45:23.702964",
+    "herald": 111,
+    "singles_ch4": 85,
+    "coinc_ch4": 0,
+    "singles_ch6": 84,
+    "coinc_ch6": 0,
+    "singles_ch8": 85,
+    "coinc_ch8": 0,
+    "singles_ch10": 85,
+    "coinc_ch10": 0,
+    "singles_ch12": 84,
+    "coinc_ch12": 0,
+    "singles_ch14": 85,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029030299996521
+   },
+   {
+    "timestamp": "2026-11-23T04:45:28.732490",
+    "herald": 21,
+    "singles_ch4": 74,
+    "coinc_ch4": 0,
+    "singles_ch6": 74,
+    "coinc_ch6": 0,
+    "singles_ch8": 74,
+    "coinc_ch8": 0,
+    "singles_ch10": 74,
+    "coinc_ch10": 0,
+    "singles_ch12": 74,
+    "coinc_ch12": 0,
+    "singles_ch14": 74,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0291560999976355
+   },
+   {
+    "timestamp": "2026-11-23T04:45:33.761492",
+    "herald": 17,
+    "singles_ch4": 25,
+    "coinc_ch4": 0,
+    "singles_ch6": 23,
+    "coinc_ch6": 0,
+    "singles_ch8": 24,
+    "coinc_ch8": 0,
+    "singles_ch10": 24,
+    "coinc_ch10": 0,
+    "singles_ch12": 23,
+    "coinc_ch12": 0,
+    "singles_ch14": 25,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028684200002317
+   },
+   {
+    "timestamp": "2026-11-23T04:45:38.790204",
+    "herald": 11,
+    "singles_ch4": 13,
+    "coinc_ch4": 0,
+    "singles_ch6": 13,
+    "coinc_ch6": 0,
+    "singles_ch8": 13,
+    "coinc_ch8": 0,
+    "singles_ch10": 13,
+    "coinc_ch10": 0,
+    "singles_ch12": 13,
+    "coinc_ch12": 0,
+    "singles_ch14": 13,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0283978000006755
+   },
+   {
+    "timestamp": "2026-11-23T04:45:43.819264",
+    "herald": 30,
+    "singles_ch4": 26,
+    "coinc_ch4": 0,
+    "singles_ch6": 25,
+    "coinc_ch6": 0,
+    "singles_ch8": 26,
+    "coinc_ch8": 0,
+    "singles_ch10": 25,
+    "coinc_ch10": 0,
+    "singles_ch12": 25,
+    "coinc_ch12": 0,
+    "singles_ch14": 26,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028658300001553
+   },
+   {
+    "timestamp": "2026-11-23T04:45:48.848149",
+    "herald": 29,
+    "singles_ch4": 28,
+    "coinc_ch4": 0,
+    "singles_ch6": 28,
+    "coinc_ch6": 0,
+    "singles_ch8": 28,
+    "coinc_ch8": 0,
+    "singles_ch10": 28,
+    "coinc_ch10": 0,
+    "singles_ch12": 28,
+    "coinc_ch12": 0,
+    "singles_ch14": 28,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028566500001034
+   },
+   {
+    "timestamp": "2026-11-23T04:45:53.877736",
+    "herald": 57,
+    "singles_ch4": 67,
+    "coinc_ch4": 0,
+    "singles_ch6": 66,
+    "coinc_ch6": 0,
+    "singles_ch8": 67,
+    "coinc_ch8": 0,
+    "singles_ch10": 66,
+    "coinc_ch10": 0,
+    "singles_ch12": 66,
+    "coinc_ch12": 0,
+    "singles_ch14": 67,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029322599999432
+   },
+   {
+    "timestamp": "2026-11-23T04:45:58.908068",
+    "herald": 7,
+    "singles_ch4": 17,
+    "coinc_ch4": 0,
+    "singles_ch6": 17,
+    "coinc_ch6": 0,
+    "singles_ch8": 17,
+    "coinc_ch8": 0,
+    "singles_ch10": 17,
+    "coinc_ch10": 0,
+    "singles_ch12": 17,
+    "coinc_ch12": 0,
+    "singles_ch14": 17,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0300204999985
+   },
+   {
+    "timestamp": "2026-11-23T04:46:08.966965",
+    "herald": 17,
+    "singles_ch4": 42,
+    "coinc_ch4": 0,
+    "singles_ch6": 42,
+    "coinc_ch6": 0,
+    "singles_ch8": 43,
+    "coinc_ch8": 0,
+    "singles_ch10": 42,
+    "coinc_ch10": 0,
+    "singles_ch12": 42,
+    "coinc_ch12": 0,
+    "singles_ch14": 43,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028592200000276
+   },
+   {
+    "timestamp": "2026-11-23T04:46:13.996214",
+    "herald": 12,
+    "singles_ch4": 26,
+    "coinc_ch4": 0,
+    "singles_ch6": 25,
+    "coinc_ch6": 0,
+    "singles_ch8": 26,
+    "coinc_ch8": 0,
+    "singles_ch10": 26,
+    "coinc_ch10": 0,
+    "singles_ch12": 26,
+    "coinc_ch12": 0,
+    "singles_ch14": 26,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028976300000068
+   },
+   {
+    "timestamp": "2026-11-23T04:46:19.026509",
+    "herald": 105,
+    "singles_ch4": 93,
+    "coinc_ch4": 0,
+    "singles_ch6": 92,
+    "coinc_ch6": 0,
+    "singles_ch8": 93,
+    "coinc_ch8": 0,
+    "singles_ch10": 92,
+    "coinc_ch10": 0,
+    "singles_ch12": 92,
+    "coinc_ch12": 0,
+    "singles_ch14": 93,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02994789999866
+   },
+   {
+    "timestamp": "2026-11-23T04:46:24.055846",
+    "herald": 28,
+    "singles_ch4": 52,
+    "coinc_ch4": 0,
+    "singles_ch6": 52,
+    "coinc_ch6": 0,
+    "singles_ch8": 52,
+    "coinc_ch8": 0,
+    "singles_ch10": 52,
+    "coinc_ch10": 0,
+    "singles_ch12": 52,
+    "coinc_ch12": 0,
+    "singles_ch14": 52,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028983500000322
+   },
+   {
+    "timestamp": "2026-11-23T04:46:29.085011",
+    "herald": 38,
+    "singles_ch4": 39,
+    "coinc_ch4": 0,
+    "singles_ch6": 38,
+    "coinc_ch6": 0,
+    "singles_ch8": 38,
+    "coinc_ch8": 0,
+    "singles_ch10": 38,
+    "coinc_ch10": 0,
+    "singles_ch12": 38,
+    "coinc_ch12": 0,
+    "singles_ch14": 39,
+    "coinc_ch14": 0,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028718400000798
+   }
+  ]
+ },
+ "loss_calibration": {
+  "file": "20261123_000249_loss_calibration.json",
+  "stages": {
+   "source_dump": {
+    "mean_hz": 33748.15539516051,
+    "std_hz": 0.0
+   },
+   "source": {
+    "mean_hz": 42411.47986058565,
+    "std_hz": 0.0
+   },
+   "ch2": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "ch4": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "dump": {
+    "mean_hz": 7599.8711673077205,
+    "std_hz": 46.201803250903005
+   },
+   "input": {
+    "mean_hz": 26456.400180766504,
+    "std_hz": 87.86725619670804
+   },
+   "straight_dump": {
+    "mean_hz": 15521.852635494266,
+    "std_hz": 51.45784401535173
+   },
+   "ch5050_exit": {
+    "mean_hz": 4357.036222755327,
+    "std_hz": 26.8546081870267
+   },
+   "ch5050_loop": {
+    "mean_hz": 672.9986571594171,
+    "std_hz": 18.16928718287644
+   },
+   "fifty_fifty_all_channels": {
+    "4": {
+     "mean_hz": 9374.075326886486,
+     "std_hz": 36.62731393830553
+    },
+    "6": {
+     "mean_hz": 1874.4364606069375,
+     "std_hz": 21.99477023080483
+    },
+    "8": {
+     "mean_hz": 326.18606770875266,
+     "std_hz": 9.906577646647305
+    },
+    "10": {
+     "mean_hz": 56.14232428243055,
+     "std_hz": 3.348917579034651
+    },
+    "12": {
+     "mean_hz": 11.20461226252226,
+     "std_hz": 1.4285026685482962
+    },
+    "14": {
+     "mean_hz": 12.52692227730972,
+     "std_hz": 1.1327671783429127
+    }
+   },
+   "zero_loop_output": {
+    "mean_hz": 19346.760543563556,
+    "std_hz": 63.76860420530448
+   },
+   "one_loop": {
+    "mean_hz": 6084.315292428493,
+    "std_hz": 33.70037727052042
+   },
+   "thirty_seventy_all_channels": {
+    "4": {
+     "mean_hz": 5504.548453477767,
+     "std_hz": 33.87527607922471
+    },
+    "6": {
+     "mean_hz": 1435.597684703025,
+     "std_hz": 11.983138707385036
+    },
+    "8": {
+     "mean_hz": 344.979665895485,
+     "std_hz": 9.046952117118524
+    },
+    "10": {
+     "mean_hz": 65.21550077631632,
+     "std_hz": 3.562721730012681
+    },
+    "12": {
+     "mean_hz": 12.180050447646703,
+     "std_hz": 1.7500953691246615
+    },
+    "14": {
+     "mean_hz": 7.417456813581126,
+     "std_hz": 1.24483950744589
+    }
+   }
+  },
+  "losses": {
+   "loss_per_loop_pass": 0.3144875483793939,
+   "loss_per_loop_pass_err": 0.00045325247369495367,
+   "loss_per_loop_pass_5050": 0.3616579771572679,
+   "loss_per_loop_pass_5050_err": 0.009177289903749835,
+   "loss_per_loop_pass_split30": 0.35206133466135836,
+   "loss_per_loop_pass_split30_err": 0.028644755290403938
+  }
+ },
+ "angles": [
+  {
+   "setting": "unitary",
+   "HWP_IN_2": 90.87928000000001,
+   "QWP_IN_2": 274.73355,
+   "HWP_OUT_2": 334.29333,
+   "QWP_OUT_2": 79.42321,
+   "HWP_TOM_1": 247.29401000000001,
+   "QWP_TOM_1": 260.71489,
+   "HWP_1": 90.01398,
+   "QWP_1": 0.09411999999997533,
+   "HWP_12": 228.95559,
+   "QWP_12": 110.17999000000003
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 302.85117,
+   "QWP_IN": 147.02117
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 100.55188000000001,
+   "QWP_IN": 30.67474
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 93.40753000000001,
+   "QWP_IN": 12.55299
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 264.70118,
+   "QWP_IN": 81.16678
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 302.85117,
+   "QWP_IN": 147.02117
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 100.55188000000001,
+   "QWP_IN": 30.67474
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 93.40753000000001,
+   "QWP_IN": 12.55299
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 264.70118,
+   "QWP_IN": 81.16678
+  }
+ ]
+}

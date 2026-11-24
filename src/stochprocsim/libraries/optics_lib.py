@@ -30,9 +30,23 @@ def gu_to_ntu(U: np.ndarray) -> np.ndarray:
 
 # ── 2×2 single-path components ────────────────────────────────────────────────
 
+# standard polarisation basis kets
+H = np.array([1, 0], dtype=complex)
+V = np.array([0, 1], dtype=complex)
+D = np.array([1, 1], dtype=complex) / np.sqrt(2)
+A = np.array([1, -1], dtype=complex) / np.sqrt(2)
+R = np.array([1, 1j], dtype=complex) / np.sqrt(2)
+L = np.array([1, -1j], dtype=complex) / np.sqrt(2)
+
+
 def overlap(psi: np.ndarray, basis: np.ndarray) -> float:
     """Compute |⟨basis|psi⟩|²."""
     return float(np.square(np.abs(np.conj(basis) @ psi)))
+
+
+def project(psi: np.ndarray, basis: np.ndarray) -> np.ndarray:
+    """Project psi onto basis ket: basis * ⟨basis|psi⟩."""
+    return basis * (np.conj(basis) @ psi)
 
 
 def HWP(theta: float) -> np.ndarray:

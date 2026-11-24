@@ -15,15 +15,23 @@ def _():
 
     from stochprocsim.utils import (
         background_rate_by_channel,
+        block_rate_mean_std,
+        drop_count_outliers,
         efficiency_for_channel,
+        kl_rate_from_output_distribution,
+        kl_rate_mc_error,
         loop_pass_k,
         loss_calibration_for,
         loss_rates_for,
     )
     return (
         background_rate_by_channel,
+        block_rate_mean_std,
+        drop_count_outliers,
         efficiency_for_channel,
         io,
+        kl_rate_from_output_distribution,
+        kl_rate_mc_error,
         loop_pass_k,
         loss_calibration_for,
         loss_rates_for,
@@ -101,12 +109,33 @@ def _(file_picker, pd):
 
 
 @app.cell(hide_code=True)
-def _(BINS, DATA_PATH, pd):
+def _(BINS, DATA_PATH, drop_count_outliers, pd):
     from stochprocsim.utils import rates_by_input_state
 
     data = pd.read_csv(DATA_PATH)
     data = data.dropna(subset=BINS + ["herald", "int_time", "input_state"])
     data = data[data["herald"] > 0]  # herald blocked / off segments
+
+    # a single catastrophic detector glitch (one row reading 100-1000x its
+    # channel's normal count) wrecks every downstream number pulled from
+    # `rates`/`stds` -- the bar plots, the loss-corrected frac, every R_KL
+    # cell below -- not just the aggregate series further down this file.
+    # Confirmed on real data: one such row alone blew up a file's R_KL
+    # error bar 5x and biased its central value. Applied here, once, right
+    # after load, so nothing downstream ever sees it.
+    #
+    # Grouped by input_state (and basis, for a tomo file): each state
+    # routes light differently, so a channel's "normal" rate can differ
+    # 4x+ state to state (confirmed on real data) -- a single file-wide
+    # median would let a real outlier in a low-baseline state hide below
+    # threshold, or flag a genuinely-higher-baseline state's normal rows as
+    # outliers against the mix.
+    _group_cols = ["input_state", "basis"] if "basis" in data.columns else ["input_state"]
+    _n_before = len(data)
+    data = data.groupby(_group_cols, group_keys=False, dropna=False).apply(
+        lambda g: drop_count_outliers(g, BINS))
+    if len(data) < _n_before:
+        print(f"dropped {_n_before - len(data)} outlier row(s) (>15x that channel's median, per input state)")
 
     # counts per second, grouped by which memory state the machine started in
     # (and, for tomography files, combined across polarization basis — see
@@ -119,25 +148,44 @@ def _(BINS, DATA_PATH, pd):
 
 @app.cell(hide_code=True)
 def _(BINS, N, loop_pass_k, np, rates):
-    from stochprocsim.models.causal_models import Causal_Models
+    from stochprocsim.libraries.optics_lib import getUtot
+    from stochprocsim.models.causal_models import Causal_Models, CausalModel as _CausalModel
     from stochprocsim.models.simulation_sampler import Simulator
     from stochprocsim.models.transition_model import QuantumTransitionModel
 
-    _sim = Simulator(QuantumTransitionModel(Causal_Models[N]))
-    p_theory = {}
-    for _s in rates.index:
-        _p = _sim.get_output_distribution(propagate_outputs=True, start_state=int(_s))
+    # theory ("theory" bars) now comes from getUtot(angles_NTU) -- the
+    # unitary rebuilt from the calibrated waveplate/mirror angles --
+    # rather than the frozen U_theo matrix, per 2026-11-24 request.
+    # true_theory (new comparison bars, every distribution plot) is the
+    # original frozen U_theo matrix's own prediction, kept alongside
+    # since the two don't actually agree for this apparatus (confirmed
+    # 2026-11-24: getUtot(angles_NTU) != U_theo, even after an NTU/GU
+    # convention swap) -- showing both instead of silently picking one.
+    _U_getutot = getUtot(Causal_Models[N].angles_NTU)
+    _cm_getutot = _CausalModel(U=_U_getutot, states=Causal_Models[N].states,
+                               angles_NTU=Causal_Models[N].angles_NTU,
+                               angles_GU=Causal_Models[N].angles_GU, name="getutot")
+    _sim = Simulator(QuantumTransitionModel(_cm_getutot))
+    _sim_true = Simulator(QuantumTransitionModel(Causal_Models[N]))
+
+    def _map_to_bins(_p):
         # _p[i] is the probability of exiting on loop pass i+1, mapped onto
         # BINS by loop_pass_k (position among recorded loop channels, not
         # channel number -- see loop_pass_k docstring for why); channels
         # beyond the model's N loops (extra recorded channels) get 0
-        p_theory[_s] = np.array([
+        return np.array([
             1 - sum(_p) if _b == "coinc_ch7"
             else (_p[loop_pass_k(_b, BINS) - 1] if loop_pass_k(_b, BINS) <= len(_p) else 0.0)
             for _b in BINS
         ])
-        print(f"s{_s}: {np.round(p_theory[_s], 4)}")
-    return Causal_Models, QuantumTransitionModel, Simulator, p_theory
+
+    p_theory, true_theory = {}, {}
+    for _s in rates.index:
+        p_theory[_s] = _map_to_bins(_sim.get_output_distribution(propagate_outputs=True, start_state=int(_s)))
+        true_theory[_s] = _map_to_bins(_sim_true.get_output_distribution(propagate_outputs=True, start_state=int(_s)))
+        print(f"s{_s} theory (getUtot):     {np.round(p_theory[_s], 4)}")
+        print(f"s{_s} true_theory (U_theo): {np.round(true_theory[_s], 4)}")
+    return Causal_Models, QuantumTransitionModel, Simulator, p_theory, true_theory
 
 
 @app.cell(hide_code=True)
@@ -168,8 +216,9 @@ def _(BINS, N, loop_pass_k, np, rates):
 
 @app.cell(hide_code=True)
 def _(np, plt, sns):
-    def plot_state_grid(frac_by_state, yerr_by_state, p_theory, suptitle, p_exact=None):
+    def plot_state_grid(frac_by_state, yerr_by_state, p_theory, suptitle, p_exact=None, true_theory=None, titles=None):
         p_exact = p_exact or {}
+        true_theory = true_theory or {}
         _states = sorted(frac_by_state)
         _ncols = min(3, len(_states))
         _nrows = -(-len(_states) // _ncols)
@@ -188,9 +237,12 @@ def _(np, plt, sns):
             if _s in p_exact:
                 _ax.bar(_x, p_exact[_s], width=0.5, fill=False, edgecolor="red",
                         linestyle="dashed", linewidth=0.8, label="exact model")
+            if _s in true_theory:
+                _ax.bar(_x, true_theory[_s], width=0.5, fill=False, edgecolor="#1F9E89",
+                        linestyle="dashdot", linewidth=1.2, label="true_theory")
             _ax.set_xticks(_x, _f.index)
             _ax.tick_params(axis="x", labelsize=7)
-            _ax.set_title(f"input s{_s}")
+            _ax.set_title(titles[_s] if titles else f"input s{_s}", fontsize=8)
         _axes.flat[0].legend()
         _fig.suptitle(suptitle)
         _fig.tight_layout()
@@ -199,7 +251,7 @@ def _(np, plt, sns):
 
 
 @app.cell(hide_code=True)
-def _(p_exact, p_theory, plot_state_grid, rates, stds):
+def _(p_exact, p_theory, plot_state_grid, rates, stds, true_theory):
     # raw fraction per bin vs theory (no loss correction)
     plot_state_grid(
         {_s: rates.loc[_s] / rates.loc[_s].sum() for _s in rates.index},
@@ -207,6 +259,7 @@ def _(p_exact, p_theory, plot_state_grid, rates, stds):
         p_theory,
         "raw fractions vs theory",
         p_exact=p_exact,
+        true_theory=true_theory,
     )
 
     print(rates.loc[:,:])
@@ -317,17 +370,22 @@ def _(
     _losses, _cal_note = loss_calibration_for(DATA_PATH.with_suffix(".json"))
     print(f"loss calibration used: {_cal_note}")
 
-    eta_dump_sp = _losses.get("det_eff_dump", 0.0)
-    input_to_loop_sp = _losses.get("loss_input_to_setup", 0.0)
-    loop_to_loop_sp = _losses.get("loss_per_loop_pass", 0.0)
-    loop_to_dump_sp = _losses.get("loss_to_dump", 0.0)
+    # `.get(key, 0.0)` only falls back when the key is MISSING -- a
+    # calibration taken while a stage read all-zero counts (e.g. the
+    # detector was latched) has the key present but explicitly `null` in
+    # the json, which `.get` happily returns as `None` straight through to
+    # the f-string formatting below. `or 0.0` catches that too.
+    eta_dump_sp = _losses.get("det_eff_dump") or 0.0
+    input_to_loop_sp = _losses.get("loss_input_to_setup") or 0.0
+    loop_to_loop_sp = _losses.get("loss_per_loop_pass") or 0.0
+    loop_to_dump_sp = _losses.get("loss_to_dump") or 0.0
 
     # "_err" companions, already propagated into the json by the loop
     # apparatus's own loss-calibration routine (not recomputed here)
-    eta_dump_sp_std = _losses.get("det_eff_dump_err", 0.0)
-    input_to_loop_sp_std = _losses.get("loss_input_to_setup_err", 0.0)
-    loop_to_loop_sp_std = _losses.get("loss_per_loop_pass_err", 0.0)
-    loop_to_dump_sp_std = _losses.get("loss_to_dump_err", 0.0)
+    eta_dump_sp_std = _losses.get("det_eff_dump_err") or 0.0
+    input_to_loop_sp_std = _losses.get("loss_input_to_setup_err") or 0.0
+    loop_to_loop_sp_std = _losses.get("loss_per_loop_pass_err") or 0.0
+    loop_to_dump_sp_std = _losses.get("loss_to_dump_err") or 0.0
 
     print(f"SINGLE PHOTON (counts):  input_to_loop={input_to_loop_sp:.3f}  "
           f"loop_to_loop={loop_to_loop_sp:.3f}  loop_to_dump={loop_to_dump_sp:.3f}")
@@ -393,6 +451,7 @@ def _(
     plot_state_grid,
     rates,
     stds,
+    true_theory,
 ):
     # T_measured: per-loop transmission measured directly from the loss
     # calibration's own coincidence rates -- loop1_hz / loop0_hz (the
@@ -431,7 +490,7 @@ def _(
     print(f"s0 (loss-corrected, T_measured): {np.round(frac[0].to_numpy(), 4)}")
     plot_state_grid(frac, yerr, p_theory,
                     f"loss-corrected (T_measured={T_measured:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
-                    p_exact=p_exact)
+                    p_exact=p_exact, true_theory=true_theory)
     return T_measured, T_measured_std, frac
 
 
@@ -448,6 +507,7 @@ def _(
     plot_state_grid,
     rates,
     stds,
+    true_theory,
 ):
     # T_fit (old method, pre-T_measured): per-loop transmission T fitted
     # against the S0 input distribution only (bin k has traversed k loops,
@@ -475,7 +535,7 @@ def _(
     print(f"s0 (loss-corrected, T_fit): {np.round(frac_fit[0].to_numpy(), 4)}")
     plot_state_grid(frac_fit, yerr_fit, p_theory,
                     f"loss-corrected (T_fit={T_fit:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
-                    p_exact=p_exact)
+                    p_exact=p_exact, true_theory=true_theory)
     return T_fit, frac_fit
 
 
@@ -558,14 +618,351 @@ def _(N, frac, frac_fit, np):
 
 
 @app.cell(hide_code=True)
+def _(mo):
+    # single source of truth for "current best"/"second best" per N.
+    # Seeded with a 2026-11-23 rescan (same rule the search cell below
+    # applies: loss_per_loop_pass [loop01, direct 2-point ratio] trusted
+    # over loss_per_loop_pass_5050 [a 6-channel decay fit confirmed wrong
+    # on two calibration files this week]; no below-theory floor -- the
+    # quantum-theory curve isn't a hard bound a real result can't beat,
+    # so ranking is purely by lowest KL, same as the search cell below).
+    #
+    # Measurement files whose own loss calibration has T_loop < 0.3 were
+    # moved to data/archive/ this session (per request -- that low a
+    # transmission was judged implausible for this apparatus) and so no
+    # longer show up in the glob these picks are scanned from; this
+    # knocked out the previous N3/N4/N5 best picks, which had all
+    # happened to share the same T=0.239 calibration.
+    #
+    # Stored as mo.state (not plain dicts) so the "search" button below
+    # can update them in place -- every downstream cell (the purple/violet
+    # series, the distribution-bar plots) reads get_best_picks()/
+    # get_second_best_picks() and recomputes automatically when either
+    # changes, same reactivity as before.
+    _INITIAL_BEST_PICKS = {
+        3: ("20261119_152443_measurement_N3_s0", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        4: ("20261121_162359_measurement_N4_sall", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        5: ("20261122_235532_measurement_N5_sall", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        6: ("20261123_171740_measurement_N6_s0", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+    }
+    _INITIAL_SECOND_BEST_PICKS = {
+        3: ("20261123_165435_measurement_N3_s0", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        4: ("20261119_153736_measurement_N4_s0", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        5: ("20261122_225307_measurement_N5_s0", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+        6: ("20261123_020042_measurement_N6_sall", "loss_per_loop_pass", "loss_per_loop_pass_err"),
+    }
+    get_best_picks, set_best_picks = mo.state(_INITIAL_BEST_PICKS)
+    get_second_best_picks, set_second_best_picks = mo.state(_INITIAL_SECOND_BEST_PICKS)
+    search_button = mo.ui.run_button(label="Search this range")
+    search_window_days = mo.ui.number(value=21, start=7, step=7, label="search window (days)")
+    mo.hstack([search_button, search_window_days])
+    return (
+        get_best_picks,
+        get_second_best_picks,
+        search_button,
+        search_window_days,
+        set_best_picks,
+        set_second_best_picks,
+    )
+
+
+@app.cell(hide_code=True)
+def _(
+    DATA_PATH,
+    background_rate_by_channel,
+    drop_count_outliers,
+    efficiency_for_channel,
+    kl_rate_from_output_distribution,
+    loop_pass_k,
+    loss_calibration_for,
+    mo,
+    np,
+    pd,
+    search_button,
+    search_window_days,
+    set_best_picks,
+    set_second_best_picks,
+):
+    # runs only on button click (mo.stop below), not on every edit --
+    # bounded to the last `search_window_days` days by filename timestamp
+    # for speed (this dataset goes back to 2026-07; scanning all of it on
+    # every click would be minutes, not seconds). loop01 only, same reason
+    # BEST_PICKS's seed values prefer it -- 5050's multi-pass decay fit
+    # isn't reliable enough to trust in an unattended scan. Point-estimate
+    # KL only here (no 3000-sample Monte Carlo -- that's what makes this
+    # fast enough to run on every click; the MC error still gets computed
+    # properly for whichever pick ends up stored, by the cell below).
+    #
+    # This is a fresh "what's best/second-best IN THIS WINDOW" search
+    # every click, not a ratchet that only replaces a stored pick on
+    # improvement -- a narrower follow-up search (e.g. widen to check a
+    # large range, then narrow back down) must show exactly what's in
+    # the narrower range, even if that's worse than a wider search found
+    # a moment ago. Tracks best AND second-best per N in a SINGLE O(N)
+    # pass over this window's candidate files -- classic top-2
+    # incremental update (if a candidate beats best, the old best demotes
+    # to second; else if it only beats second, it replaces second), not a
+    # sort (O(N log N)) and not a separate second pass (O(2N), same
+    # complexity class but wasteful).
+    #
+    # No below-theory floor -- per request 2026-11-23: the quantum-theory
+    # curve isn't a hard bound here, a real result can legitimately beat
+    # it, so a candidate is only skipped if the calc itself fails (no
+    # usable T, or a degenerate/negative distribution), not based on
+    # where its KL lands relative to theory.
+    mo.stop(not search_button.value, mo.md("Click **Search this range** above to scan it."))
+
+    _THEORY = {3: 0.039757, 4: 0.034827, 5: 0.025361, 6: 0.024314}
+
+    import datetime as _dt
+    import re as _re_search
+
+    def _quick_point_kl(stem, pick_n):
+        _json_path = DATA_PATH.parent / f"{stem}.json"
+        _csv_path = DATA_PATH.parent / f"{stem}.csv"
+        if not _json_path.exists() or not _csv_path.exists():
+            return None
+        _losses, _ = loss_calibration_for(_json_path)
+        _T = _losses.get("loss_per_loop_pass")
+        if not _T:
+            return None
+        _cols = pd.read_csv(_csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        _bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            _bins = _bins + ["coinc_ch7"]
+        _data = pd.read_csv(_csv_path)
+        _data = _data.dropna(subset=_bins + ["herald", "int_time", "input_state"])
+        _data = _data[_data["herald"] > 0]
+        _s0 = _data[_data["input_state"] == 0]
+        if "basis" in _s0.columns:
+            _s0 = _s0[_s0["basis"].isna()]
+        if len(_s0) < 10:
+            return None
+        _s0 = drop_count_outliers(_s0, _bins)
+        _rates = _s0[_bins].sum() / _s0["int_time"].sum()
+        _bg_by_ch, _ = background_rate_by_channel(_json_path)
+        _bg = pd.Series({b: _bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in _bins})
+        _eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in _bins})
+        _k = np.array([pick_n if b == "coinc_ch7" else loop_pass_k(b, _bins) for b in _bins])
+        _corr = ((_rates - _bg) / _eff) / (_T ** _k)
+        _total = _corr.clip(lower=0).sum()
+        if _total <= 0:
+            return None
+        _frac = (_corr.clip(lower=0) / _total).to_numpy()[:pick_n]
+        return float(kl_rate_from_output_distribution(pick_n, _frac))
+
+    _cutoff = (_dt.datetime.now() - _dt.timedelta(days=search_window_days.value)).strftime("%Y%m%d_%H%M%S")
+
+    # Fresh search EVERY click, not a ratchet against whatever's already
+    # stored -- a narrower follow-up search must show the best/second-best
+    # actually IN that window, even if it's worse than a wider search found
+    # earlier. (Previous version seeded from get_best_picks()/
+    # get_second_best_picks() and only replaced on improvement, so
+    # widening-then-narrowing the window silently kept showing the wide-
+    # window winner -- not what "search this range" should mean.)
+    _best = {_n: (None, float("inf")) for _n in _THEORY}
+    _second = {_n: (None, float("inf")) for _n in _THEORY}
+
+    for _p in sorted((DATA_PATH.parent).glob("*measurement_N*.csv")):
+        _ts_match = _re_search.search(r"\d{8}_\d{6}", _p.name)
+        _n_match = _re_search.search(r"_N(\d+)_", _p.name)
+        if not _ts_match or not _n_match or _ts_match.group() < _cutoff:
+            continue
+        _n = int(_n_match.group(1))
+        if _n not in _best:
+            continue
+        _kl = _quick_point_kl(_p.stem, _n)
+        if _kl is None:
+            continue
+        if _kl < _best[_n][1]:
+            _second[_n] = _best[_n]
+            _best[_n] = (_p.stem, _kl)
+        elif _p.stem != _best[_n][0] and _kl < _second[_n][1]:
+            _second[_n] = (_p.stem, _kl)
+
+    _updated_best = {_n: (_stem, "loss_per_loop_pass", "loss_per_loop_pass_err")
+                      for _n, (_stem, _kl) in _best.items() if _stem}
+    _updated_second = {_n: (_stem, "loss_per_loop_pass", "loss_per_loop_pass_err")
+                        for _n, (_stem, _kl) in _second.items() if _stem}
+
+    set_best_picks(_updated_best)
+    set_second_best_picks(_updated_second)
+    for _n in sorted(_THEORY):
+        _best_stem, _best_kl = _best[_n]
+        _second_stem, _second_kl = _second[_n]
+        print(f"N{_n} (last {search_window_days.value}d): "
+              f"best={_best_stem or 'none'} ({_best_kl:.6f})  "
+              f"second={_second_stem or 'none'} ({_second_kl:.6f})")
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    DATA_PATH,
+    QuantumTransitionModel,
+    Simulator,
+    background_rate_by_channel,
+    block_rate_mean_std,
+    drop_count_outliers,
+    efficiency_for_channel,
+    get_best_picks,
+    get_second_best_picks,
+    kl_rate_from_output_distribution,
+    kl_rate_mc_error,
+    loop_pass_k,
+    loss_calibration_for,
+    np,
+    pd,
+):
+    BEST_PICKS = get_best_picks()
+    SECOND_BEST_PICKS = get_second_best_picks()
+
+    from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_best
+    from stochprocsim.libraries.optics_lib import getUtot as _getUtot_best
+    from stochprocsim.models.causal_models import CausalModel as _CausalModel_best
+
+    _data_dir = DATA_PATH.parent
+
+    def _best_pick_stats(stem, pick_N, loss_key, err_key):
+        json_path = _data_dir / f"{stem}.json"
+        csv_path = _data_dir / f"{stem}.csv"
+        losses, cal_note = loss_calibration_for(json_path)
+        T, T_err = losses[loss_key], losses.get(err_key) or 0.0
+
+        _cols = pd.read_csv(csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            bins = bins + ["coinc_ch7"]
+        data = pd.read_csv(csv_path)
+        data = data.dropna(subset=bins + ["herald", "int_time", "input_state"])
+        data = data[data["herald"] > 0]
+        s0 = data[data["input_state"] == 0]
+        if "basis" in s0.columns:
+            s0 = s0[s0["basis"].isna()]
+        s0 = drop_count_outliers(s0, bins)
+
+        rates, stds = block_rate_mean_std(s0, bins, block_size=30)
+        # background taken as exactly measured, no error term -- per
+        # request 2026-11-23: background_rate_std_by_channel's inline-only
+        # SEM was judged not worth modeling (kl_rate_mc_error's bg_std
+        # already defaults to None/0 for exactly this case, so simply not
+        # passing it here is sufficient).
+        bg_by_ch, bg_note = background_rate_by_channel(json_path)
+        bg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins})
+        eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins})
+
+        k = np.array([pick_N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        transmission = T ** k
+        corr = ((rates - bg) / eff) / transmission
+        norm = corr.clip(lower=0).sum()
+        frac = corr.clip(lower=0) / norm
+        yerr = ((stds / eff) / transmission) / norm
+        point_kl = kl_rate_from_output_distribution(pick_N, frac.to_numpy()[:pick_N])
+        mc_mean, mc_std, mc_converged = kl_rate_mc_error(pick_N, rates, stds, T, T_err, bg, eff, bins,
+                                                           n_samples=3000, rng=np.random.default_rng(0),
+                                                           check_convergence=True)
+        if not mc_converged:
+            print(f"  WARNING: N{pick_N} MC error estimate may not have converged at 3000 samples "
+                  f"(two independent halves disagreed by >20%) -- treat mc_std as approximate")
+
+        # theory bars: getUtot(angles_NTU) (the unitary rebuilt from this
+        # N's calibrated waveplate/mirror angles), per 2026-11-24 request
+        _U_getutot = _getUtot_best(Causal_Models[pick_N].angles_NTU)
+        _cm_getutot = _CausalModel_best(U=_U_getutot, states=Causal_Models[pick_N].states,
+                                          angles_NTU=Causal_Models[pick_N].angles_NTU,
+                                          angles_GU=Causal_Models[pick_N].angles_GU, name="getutot")
+        sim = Simulator(QuantumTransitionModel(_cm_getutot))
+        _p = sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        p_theory = np.array([1 - sum(_p) if b == "coinc_ch7"
+                              else (_p[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p) else 0.0)
+                              for b in bins])
+
+        # true_theory bars: the frozen U_theo matrix's own prediction --
+        # kept alongside since getUtot(angles_NTU) and U_theo don't
+        # actually agree for this apparatus (confirmed 2026-11-24)
+        sim_true = Simulator(QuantumTransitionModel(Causal_Models[pick_N]))
+        _p_true = sim_true.get_output_distribution(propagate_outputs=True, start_state=0)
+        true_theory = np.array([1 - sum(_p_true) if b == "coinc_ch7"
+                                 else (_p_true[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p_true) else 0.0)
+                                 for b in bins])
+
+        _probs = _get_uniform_renewal_best(pick_N - 1).probs
+        _exit, _a_prod = [], 1.0
+        for _p_survive in _probs:
+            _exit.append((1 - _p_survive) * _a_prod)
+            _a_prod *= _p_survive
+        _exit.append(_a_prod)
+        p_exact = np.array([0.0 if b == "coinc_ch7"
+                             else (_exit[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_exit) else 0.0)
+                             for b in bins])
+
+        # truncate the DISPLAYED distribution to this N's own loop passes
+        # (+ dump) -- the hardware always records all 6 loop channels
+        # regardless of which N is active, so e.g. an N=3 pick's ch10/12/14
+        # are pure noise/crosstalk, not signal. Showing them anyway is how
+        # a near-zero bin with a huge relative SEM (confirmed: ch14 here
+        # once had an error bar 15x its own bar height) ends up on the
+        # plot -- truncating matches what the KL calc itself already does
+        # (kl_rate_from_output_distribution above is only ever given the
+        # first pick_N entries).
+        _keep = [b == "coinc_ch7" or loop_pass_k(b, bins) <= pick_N for b in bins]
+        bins_trunc = [b for b, _m in zip(bins, _keep) if _m]
+        frac, yerr = frac[bins_trunc], yerr[bins_trunc]
+        p_theory, p_exact, true_theory = p_theory[_keep], p_exact[_keep], true_theory[_keep]
+
+        return {
+            "stem": stem, "T": T, "T_err": T_err, "cal_note": cal_note,
+            "frac": frac, "yerr": yerr, "bins": bins_trunc,
+            "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
+            "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
+        }
+
+    best_results = {_n: _best_pick_stats(_stem, _n, _lk, _ek)
+                     for _n, (_stem, _lk, _ek) in BEST_PICKS.items()}
+    for _n, _r in best_results.items():
+        print(f"N{_n} best: {_r['stem']}  T={_r['T']:.4f}+/-{_r['T_err']:.4f} ({_r['cal_note']})  "
+              f"point={_r['point_kl']:.6f}  MC={_r['mc_mean']:.6f}+/-{_r['mc_std']:.6f}")
+
+    second_best_results = {_n: _best_pick_stats(_stem, _n, _lk, _ek)
+                            for _n, (_stem, _lk, _ek) in SECOND_BEST_PICKS.items()}
+    for _n, _r in second_best_results.items():
+        print(f"N{_n} second-best: {_r['stem']}  T={_r['T']:.4f}+/-{_r['T_err']:.4f} ({_r['cal_note']})  "
+              f"point={_r['point_kl']:.6f}  MC={_r['mc_mean']:.6f}+/-{_r['mc_std']:.6f}")
+    return best_results, second_best_results
+
+
+@app.cell(hide_code=True)
+def _(best_results, plot_state_grid):
+    # output distribution (loss-corrected frac vs theory) for each N's
+    # CURRENT best pick -- reads straight from best_results above, so this
+    # redraws automatically whenever BEST_PICKS changes, no manual re-sync.
+    _frac_by_n = {_n: _r["frac"] for _n, _r in best_results.items()}
+    _yerr_by_n = {_n: _r["yerr"] for _n, _r in best_results.items()}
+    _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in best_results.items()}
+    _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in best_results.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in best_results.items()}
+    _titles = {_n: f"N={_n}  T={_r['T']:.3f}±{_r['T_err']:.3f}\nKL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
+               for _n, _r in best_results.items()}
+    plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
+                     "Current best-rated (last week) output distributions vs theory",
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
+    return
+
+
+@app.cell(hide_code=True)
 def _(
     Causal_Models,
     QuantumTransitionModel,
     Simulator,
+    best_results,
     fig_download_button,
     mo,
     np,
     plt,
+    second_best_results,
     sns,
 ):
     # divergence-rate-vs-N plot from demo.py, with our measured rate added:
@@ -611,161 +1008,30 @@ def _(
     _ls = [3, 4, 5, 6] # length of models to be computed
     _y_classical = [get_bd(_n) for _n in _ls]
 
-    # _y_classical = [get_uniform_renewal(_n - 1).classical_bd(4, target_dim=2) for _n in _x_class]
     # stale: these were sized for the old state-0-only _sim_quantum, not
     # recomputed for the stationary-weighted formula above -- treat as a
     # rough error bar, not a precise one, until redone
     _qtheo_yerr = [0.002054339006460678, 0.0014301897956533847, 0.0016754397869550568, 0.0015075218255867487]
 
+    # x-axis + data for the kept "T=0.3746, loop, 11-17" series -- every
+    # other historical series shared this same [3,4,5,6] x-axis and got
+    # removed, this is the one still plotted (see git history for the
+    # original per-N file list this came from, e.g.
+    # 20260803_171226_measurement_N3_sall.csv -> R_KL=0.040302+/-0.000474).
     _x_exp = [3, 4, 5, 6]
-    # best per N using each file's OWN T_measured = C4/C2 (per-loop
-    # transmission read off that specific file's own loss-calibration
-    # coincidence rates) -- NOT T_fit (tautologically pulled toward a
-    # lower R_KL, see git history) and NOT a single common T applied to
-    # every file either (tried that too -- see git history -- but it
-    # isn't honest if we're claiming to use each run's own measurement).
-    # Trusting a file's own T requires it actually have a genuinely
-    # EMBEDDED loss_calibration snapshot (saved by measurement.py from
-    # 2026-08-17 on) rather than resolving via the unreliable directory
-    # fallback ("whichever *_loss_calibration.json happens to be newest"),
-    # so the candidate pool here is restricted to the ~18 files with real
-    # embedded calibration. Across this dataset's whole campaign there
-    # have only ever been 2 distinct ch2/ch4 (ie. C2/C4) measurements --
-    # calibrate_loss() overwrites the same file in place with no history,
-    # so most "recalibration" runs just redid other stages and left
-    # ch2/ch4 untouched (see git history) -- T=0.3926 (most files) and
-    # T=0.4393 (one later file). Candidates picked by lowest resulting
-    # R_KL that doesn't score *below* the quantum-theory rate for that N
-    # (a result under the theory curve isn't a better-than-quantum
-    # apparatus, it's a red flag -- same failure mode as the earlier
-    # blocked-laser dataset). Rescanned 2026-08-22:
-    #   N3: 20260821_155706_measurement_N3_sall.csv  T=0.3926  R_KL=0.087975+/-0.003693  2026-08-21 15:57:06
-    #   N4: 20260822_153701_measurement_N4_sall.csv  T=0.4393  R_KL=0.082974+/-0.000799  2026-08-22 15:37:01
-    #   N5: 20260820_064622_measurement_N5_sall.csv  T=0.3926  R_KL=0.042956+/-0.001106  2026-08-20 06:46:22
-    #   N6: 20260822_064000_measurement_N6_sall.csv  T=0.3926  R_KL=0.095390+/-0.001430  2026-08-22 06:40:00
-    # (theory values per N: {3: 0.039757, 4: 0.034827, 5: 0.025361, 6: 0.024314} --
-    # classical bound per N: {3: 0.055049, 4: 0.048661, 5: 0.042518, 6: 0.037041} --
-    # every point here is ABOVE its classical bound, N5 by the smallest
-    # margin -- with each file's own honestly-measured transmission, this
-    # dataset does not currently beat the classical bound at any N; the
-    # tiny (2-measurement) candidate pool for a trustworthy T is itself
-    # the limiting factor, not just statistics)
-    # error bars: propagate each bin's std through the whole R_KL calc by
-    # Monte Carlo (resample frac0 ~ Normal(frac0, frac0_std), recompute
-    # R_KL, take std across 2000 samples -- this calc is too deeply nested
-    # for an easy analytic derivative). frac0_std per bin is the same std
-    # rates_by_input_state already returns: for a tomo file that's the
-    # between-conjugate-pair spread (H+V vs A+D vs R+L) folded in with the
-    # within-basis shot SEM: literally "std among the [tomo] outputs" being
-    # averaged; for a plain (non-tomo) file it's just shot SEM across
-    # repeated rows in that state -- same propagation code path either way.
-    rate_exp = [0.087975, 0.082974, 0.042956, 0.095390]
-    rate_exp_err = [0.003693, 0.000799, 0.001106, 0.001430]
-
-    # same R_KL-minimizing selection, but with a single common T=0.3926
-    # applied to every file instead of each file's own T_measured -- see
-    # git history for the full comparison/discussion. Candidate pool is
-    # NOT restricted to embedded-calibration files here, since we aren't
-    # trusting any file's own T anyway:
-    #   N3: 20260803_171226_measurement_N3_sall.csv    R_KL=0.044648+/-0.000532  2026-08-03 17:12:26
-    #   N4: 20260804_092116_measurement_N4_s0_tomo.csv R_KL=0.042421+/-0.001490  2026-08-04 09:21:16
-    #   N5: 20260820_064622_measurement_N5_sall.csv    R_KL=0.042954+/-0.001105  2026-08-20 06:46:22
-    #   N6: 20260817_091919_measurement_N6_sall.csv    R_KL=0.054683+/-0.001397  2026-08-17 09:19:19
-    rate_exp_common_t = [0.044648, 0.042421, 0.042954, 0.054683]
-    rate_exp_common_t_err = [0.000532, 0.001490, 0.001105, 0.001397]
-
-    # same T_fit method and below-theory exclusion, but restricted to
-    # files with real tomography (a non-null "basis" column -- most files
-    # carry the column but leave it all-NaN):
-    #   N3: 20260821_155706_measurement_N3_sall.csv       T_fit=0.3491  R_KL=0.043642+/-0.001979  2026-08-21 15:57:06
-    #   N4: 20260804_092116_measurement_N4_s0_tomo.csv    T_fit=0.3789  R_KL=0.038374+/-0.001311  2026-08-04 09:21:16
-    #   N5: 20260820_064622_measurement_N5_sall.csv       T_fit=0.4967  R_KL=0.060361+/-0.002496  2026-08-20 06:46:22
-    #   N6: 20260817_091919_measurement_N6_sall.csv       T_fit=0.4746  R_KL=0.068156+/-0.001218  2026-08-17 09:19:19
-    rate_exp_tomo_bg = [0.043642, 0.038374, 0.060361, 0.068156]
-    rate_exp_tomo_bg_err = [0.001979, 0.001311, 0.002496, 0.001218]
-
-    # best T_fit per N over the FULL (unrestricted) candidate pool -- a
-    # per-file transmission fit to that file's own S0 shape vs quantum
-    # theory, tautologically pulled toward a lower R_KL, not an
-    # independent measurement (see the Own-T/Common-T comments above for
-    # why it's shown only as a comparison line, not the primary result):
-    #   N3: 20260803_171226_measurement_N3_sall.csv       T_fit=0.3790  R_KL=0.041303+/-0.000502  2026-08-03 17:12:26
-    #   N4: 20260804_092116_measurement_N4_s0_tomo.csv    T_fit=0.3789  R_KL=0.038368+/-0.001311  2026-08-04 09:21:16
-    #   N5: 20260730_173305_measurement_N5_s0.csv         T_fit=0.3545  R_KL=0.031514+/-0.000474  2026-07-30 17:33:05
-    #   N6: 20260730_200453_measurement_N6_s0.csv         T_fit=0.3712  R_KL=0.043957+/-0.000441  2026-07-30 20:04:53
-    rate_exp_tfit = [0.041303, 0.038368, 0.031514, 0.043957]
-    rate_exp_tfit_err = [0.000502, 0.001311, 0.000474, 0.000441]
-
-    # same R_KL-minimizing selection as rate_exp_common_t, but using the two
-    # most recent single-photon loop-pass transmission measurements
-    # (20260815_153306_loss_calibration.json, recalibrated 2026-11-17 via
-    # the "loop01"/"5050" queue steps) instead of the old T=0.3926:
-    #   T_loop  = loss_per_loop_pass      = 0.3746 +/- 0.0135 (direct loop0/loop1 ratio)
-    #   T_5050  = loss_per_loop_pass_5050 = 0.4088 +/- 0.0618 (50/50-splitter cross-check)
-    # Candidate pool: every *_measurement_N{3,4,5,6}_*.csv in data/ (sall and
-    # s0, tomo included), excluding *_background/*_REF files. Picked by
-    # lowest R_KL that doesn't score below the quantum-theory rate for that
-    # N (same exclusion rule as rate_exp/rate_exp_common_t above); a few
-    # files are skipped outright because background-subtracted rates go
-    # negative at this T and can't form a valid RenewalProcess. Error bars:
-    # same 400-sample Monte Carlo propagation of each bin's std as the other
-    # series. Rescanned 2026-11-18:
-    #   T_loop:
-    #     N3: 20260803_171226_measurement_N3_sall.csv       R_KL=0.040302+/-0.000474  2026-08-03 17:12:26
-    #     N4: 20260804_092116_measurement_N4_s0_tomo.csv    R_KL=0.037215+/-0.001283  2026-08-04 09:21:16
-    #     N5: 20260730_173305_measurement_N5_s0.csv         R_KL=0.038743+/-0.000574  2026-07-30 17:33:05
-    #     N6: 20260730_200453_measurement_N6_s0.csv         R_KL=0.045617+/-0.000418  2026-07-30 20:04:53
-    #   T_5050:
-    #     N3: 20260803_171226_measurement_N3_sall.csv       R_KL=0.049057+/-0.000562  2026-08-03 17:12:26
-    #     N4: 20260822_204913_measurement_N4_sall.csv       R_KL=0.042146+/-0.001012  2026-08-22 20:49:13
-    #     N5: 20260820_064622_measurement_N5_sall.csv       R_KL=0.041239+/-0.001136  2026-08-20 06:46:22
-    #     N6: 20260817_091919_measurement_N6_sall.csv       R_KL=0.053557+/-0.001199  2026-08-17 09:19:19
-    # (quantum theory per N, this scan: {3: 0.039757, 4: 0.034827, 5: 0.025361, 6: 0.024314} --
-    # every point above its theory value, same as every other series here)
     rate_exp_t_loop = [0.040302, 0.037215, 0.038743, 0.045617]
     rate_exp_t_loop_err = [0.000474, 0.001283, 0.000574, 0.000418]
-    rate_exp_t_5050 = [0.049057, 0.042146, 0.041239, 0.053557]
-    rate_exp_t_5050_err = [0.000562, 0.001012, 0.001136, 0.001199]
 
-    # the 2026-11-17 calibration above was superseded the next day by a
-    # fresh calibrate_loss() run (20261118_161931_loss_calibration.json,
-    # saved_at 2026-11-18T16:08:05) -- same two methods, new T values:
-    #   T_loop  = loss_per_loop_pass      = 0.3992 +/- 0.0107 (was 0.3746 +/- 0.0135)
-    #   T_5050  = loss_per_loop_pass_5050 = 0.3323 +/- 0.0372 (was 0.4088 +/- 0.0618)
-    # Old calibration file is untouched on disk (still 0.3746/0.4088), so
-    # both generations of the T_loop/T_5050 series are kept here side by
-    # side rather than overwriting one with the other. Same best-per-N
-    # selection/exclusion rule and 400-sample Monte Carlo error bars as
-    # above. Two of today's own new measurement files
-    # (20261118_165540_measurement_N4_s0.csv, 20261118_054912_measurement_N5_sall.csv)
-    # get skipped at this T -- background-subtracted rates go negative --
-    # same as other skipped files above, not specific to being new. Rescanned 2026-11-18:
-    #   T_loop (0.3992):
-    #     N3: 20260803_171226_measurement_N3_sall.csv       R_KL=0.046384+/-0.000537  2026-08-03 17:12:26
-    #     N4: 20260822_204913_measurement_N4_sall.csv       R_KL=0.039372+/-0.000930  2026-08-22 20:49:13
-    #     N5: 20260820_064622_measurement_N5_sall.csv       R_KL=0.040713+/-0.001023  2026-08-20 06:46:22
-    #     N6: 20260817_091919_measurement_N6_sall.csv       R_KL=0.053951+/-0.001220  2026-08-17 09:19:19
-    #   T_5050 (0.3323):
-    #     N3: 20260729_094121_measurement_N3_sall.csv       R_KL=0.040442+/-0.000358  2026-07-29 09:41:21
-    #     N4: 20260822_153701_measurement_N4_sall.csv       R_KL=0.037973+/-0.000299  2026-08-22 15:37:01
-    #     N5: 20260730_173305_measurement_N5_s0.csv         R_KL=0.025835+/-0.000363  2026-07-30 17:33:05
-    #     N6: 20260730_200453_measurement_N6_s0.csv         R_KL=0.030901+/-0.000421  2026-07-30 20:04:53
-    # (every point still above its theory value for this N, same as the other series)
-    rate_exp_t_loop_new = [0.046384, 0.039372, 0.040713, 0.053951]
-    rate_exp_t_loop_new_err = [0.000537, 0.000930, 0.001023, 0.001220]
-    rate_exp_t_5050_new = [0.040442, 0.037973, 0.025835, 0.030901]
-    rate_exp_t_5050_new_err = [0.000358, 0.000299, 0.000363, 0.000421]
+    _x_exp_recent = sorted(best_results)
+    rate_exp_recent = [best_results[_n]["mc_mean"] for _n in _x_exp_recent]
+    rate_exp_recent_err = [best_results[_n]["mc_std"] for _n in _x_exp_recent]
 
-    # seaborn whitegrid styling, matching Fig. 4 of the paper draft. Classical
-    # bound, quantum target, and both generations of the common-T
-    # experimental series (2026-11-17 calibration and the 2026-11-18
-    # recalibration that superseded it) -- T_meas/T=0.3926/T_fit dropped per
-    # request, kept available above for anyone restoring them. All four
-    # experimental series in the same dark-red family: old = darker/more
-    # saturated, new = lighter; loop = squares, 5050 = triangles.
+    _x_exp_second = sorted(second_best_results)
+    rate_exp_second = [second_best_results[_n]["mc_mean"] for _n in _x_exp_second]
+    rate_exp_second_err = [second_best_results[_n]["mc_std"] for _n in _x_exp_second]
+
     _c_classical, _c_quantum = "#3B5BA5", "#4C9A2A"
-    _c_exp_t_loop, _c_exp_t_5050 = "#7A0C13", "#C1272D"
-    _c_exp_t_loop_new, _c_exp_t_5050_new = "#D1495B", "#F08080"
+    _c_exp_t_loop, _c_exp_recent, _c_exp_second = "#7A0C13", "#5C2E8A", "#A77DD1"
     _x_c, _y_c = np.array(_x_class), np.array(_y_classical)
     _y_q, _e_q = np.array(_y_quantum), np.array(_qtheo_yerr)
 
@@ -777,20 +1043,538 @@ def _(
         _ax.fill_between(_x_quant, _y_q - _e_q, _y_q + _e_q, color=_c_quantum, alpha=0.2)
         _ax.errorbar(_x_exp, rate_exp_t_loop, yerr=rate_exp_t_loop_err, fmt="s--", capsize=3,
                       color=_c_exp_t_loop, linewidth=1.5, label="Exp (T=0.3746, loop, 11-17)")
-        _ax.errorbar(_x_exp, rate_exp_t_5050, yerr=rate_exp_t_5050_err, fmt="^--", capsize=3,
-                      color=_c_exp_t_5050, linewidth=1.5, label="Exp (T=0.4088, 5050, 11-17)")
-        _ax.errorbar(_x_exp, rate_exp_t_loop_new, yerr=rate_exp_t_loop_new_err, fmt="s--", capsize=3,
-                      color=_c_exp_t_loop_new, linewidth=1.5, label="Exp (T=0.3992, loop, 11-18)")
-        _ax.errorbar(_x_exp, rate_exp_t_5050_new, yerr=rate_exp_t_5050_new_err, fmt="^--", capsize=3,
-                      color=_c_exp_t_5050_new, linewidth=1.5, label="Exp (T=0.3323, 5050, 11-18)")
+        _ax.errorbar(_x_exp_recent, rate_exp_recent, yerr=rate_exp_recent_err, fmt="s--", capsize=3,
+                      color=_c_exp_recent, linewidth=1.5, label="Exp (current best, last week)")
+        _ax.errorbar(_x_exp_second, rate_exp_second, yerr=rate_exp_second_err, fmt="^--", capsize=3,
+                      color=_c_exp_second, linewidth=1.5, label="Exp (second-best, last week)")
         _ax.fill_between(_x_c, _y_c, _ax.get_ylim()[1], alpha=0.3, color="none",
                           edgecolor=_c_classical, hatch="///")
         _ax.set_xticks(_x_c)
+        # _ax.set_ylim(0, 0.4)
         _ax.set_xlabel("Process length N")
         _ax.set_ylabel(r"$R_{KL}$")
         _ax.set_title("KL Divergence Rate for Process Depth N")
         _ax.legend(frameon=True, fontsize=8)
     mo.vstack([_fig, fig_download_button(_fig, "kl_divergence_rate_vs_N.svg")])
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    DATA_PATH,
+    QuantumTransitionModel,
+    Simulator,
+    background_rate_by_channel,
+    block_rate_mean_std,
+    drop_count_outliers,
+    efficiency_for_channel,
+    kl_rate_from_output_distribution,
+    kl_rate_mc_error,
+    loop_pass_k,
+    loss_rates_for,
+    np,
+    pd,
+    plot_state_grid,
+):
+    # Closest-to-theory_U pick per N using T_measured (loop1_hz/loop0_hz,
+    # same ratio as the T_measured cell earlier in this notebook) as the
+    # loss correction -- ranked by sum|measured - theory_U| over this N's
+    # own loop bins, instead of by lowest KL vs. the uniform-renewal
+    # model. These are different yardsticks: a run can match theory_U
+    # closely yet have a worse R_KL, since R_KL is never computed against
+    # theory_U at all (see 2026-11-24 conversation, e.g.
+    # 20261123_213652_measurement_N4_s0 had the SMALLEST theory_U residual
+    # of that night's N4 runs but the WORST R_KL). KL is still shown here
+    # for context, not as the selection criterion.
+    _data_dir = DATA_PATH.parent
+    import datetime as _dt_tmeasured
+    import re as _re_tmeasured
+
+    def _quick_theory_residual_tmeasured(stem, pick_n):
+        _json_path = _data_dir / f"{stem}.json"
+        _csv_path = _data_dir / f"{stem}.csv"
+        if not _json_path.exists() or not _csv_path.exists():
+            return None
+        _loss_rates, _ = loss_rates_for(_json_path)
+        _c2, _c4 = _loss_rates.get("loop0_hz", 0.0), _loss_rates.get("loop1_hz", 0.0)
+        _T = _c4 / _c2 if _c2 else 0.0
+        if not _T:
+            return None
+        _cols = pd.read_csv(_csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        _bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            _bins = _bins + ["coinc_ch7"]
+        _data = pd.read_csv(_csv_path)
+        _data = _data.dropna(subset=_bins + ["herald", "int_time", "input_state"])
+        _data = _data[_data["herald"] > 0]
+        _s0 = _data[_data["input_state"] == 0]
+        if "basis" in _s0.columns:
+            _s0 = _s0[_s0["basis"].isna()]
+        if len(_s0) < 10:
+            return None
+        _s0 = drop_count_outliers(_s0, _bins)
+        _rates = _s0[_bins].sum() / _s0["int_time"].sum()
+        _bg_by_ch, _ = background_rate_by_channel(_json_path)
+        _bg = pd.Series({b: _bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in _bins})
+        _eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in _bins})
+        _k = np.array([pick_n if b == "coinc_ch7" else loop_pass_k(b, _bins) for b in _bins])
+        _corr = ((_rates - _bg) / _eff) / (_T ** _k)
+        _total = _corr.clip(lower=0).sum()
+        if _total <= 0:
+            return None
+        _frac = (_corr.clip(lower=0) / _total).to_numpy()
+
+        _sim = Simulator(QuantumTransitionModel(Causal_Models[pick_n]))
+        _p = _sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        _p_theory = np.array([1 - sum(_p) if b == "coinc_ch7"
+                               else (_p[loop_pass_k(b, _bins) - 1] if loop_pass_k(b, _bins) <= len(_p) else 0.0)
+                               for b in _bins])
+        _keep = [b == "coinc_ch7" or loop_pass_k(b, _bins) <= pick_n for b in _bins]
+        return float(np.abs(_frac[_keep] - _p_theory[_keep]).sum())
+
+    _SEARCH_WINDOW_DAYS_TM = 21
+    _cutoff_tmeasured = (_dt_tmeasured.datetime.now() - _dt_tmeasured.timedelta(days=_SEARCH_WINDOW_DAYS_TM)).strftime("%Y%m%d_%H%M%S")
+
+    _best_tmeasured = {_n: (None, float("inf")) for _n in (3, 4, 5, 6)}
+    for _fp in sorted(_data_dir.glob("*measurement_N*.csv")):
+        _ts_match = _re_tmeasured.search(r"\d{8}_\d{6}", _fp.name)
+        _n_match = _re_tmeasured.search(r"_N(\d+)_", _fp.name)
+        if not _ts_match or not _n_match or _ts_match.group() < _cutoff_tmeasured:
+            continue
+        _n = int(_n_match.group(1))
+        if _n not in _best_tmeasured:
+            continue
+        _residual = _quick_theory_residual_tmeasured(_fp.stem, _n)
+        if _residual is not None and _residual < _best_tmeasured[_n][1]:
+            _best_tmeasured[_n] = (_fp.stem, _residual)
+
+    def _theory_match_stats_tmeasured(stem, pick_N):
+        json_path = _data_dir / f"{stem}.json"
+        csv_path = _data_dir / f"{stem}.csv"
+        loss_rates, _ = loss_rates_for(json_path)
+        c2, c4 = loss_rates.get("loop0_hz", 0.0), loss_rates.get("loop1_hz", 0.0)
+        c2_err, c4_err = loss_rates.get("loop0_hz_err", 0.0), loss_rates.get("loop1_hz_err", 0.0)
+        T = c4 / c2 if c2 else 0.0
+        T_err = (T * ((c4_err / c4) ** 2 + (c2_err / c2) ** 2) ** 0.5) if c2 and c4 else 0.0
+
+        _cols = pd.read_csv(csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            bins = bins + ["coinc_ch7"]
+        data = pd.read_csv(csv_path)
+        data = data.dropna(subset=bins + ["herald", "int_time", "input_state"])
+        data = data[data["herald"] > 0]
+        s0 = data[data["input_state"] == 0]
+        if "basis" in s0.columns:
+            s0 = s0[s0["basis"].isna()]
+        s0 = drop_count_outliers(s0, bins)
+
+        rates, stds = block_rate_mean_std(s0, bins, block_size=30)
+        bg_by_ch, _ = background_rate_by_channel(json_path)
+        bg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins})
+        eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins})
+
+        k = np.array([pick_N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        transmission = T ** k
+        corr = ((rates - bg) / eff) / transmission
+        norm = corr.clip(lower=0).sum()
+        frac = corr.clip(lower=0) / norm
+        yerr = ((stds / eff) / transmission) / norm
+        point_kl = kl_rate_from_output_distribution(pick_N, frac.to_numpy()[:pick_N])
+        mc_mean, mc_std, mc_converged = kl_rate_mc_error(pick_N, rates, stds, T, T_err, bg, eff, bins,
+                                                           n_samples=300, rng=np.random.default_rng(0),
+                                                           check_convergence=True)
+        if not mc_converged:
+            print(f"  WARNING: N{pick_N} (T_measured) MC error estimate may not have converged at 300 "
+                  f"samples (two independent halves disagreed by >20%) -- treat mc_std as approximate")
+
+        # theory bars: getUtot(angles_NTU), per 2026-11-24 request
+        from stochprocsim.libraries.optics_lib import getUtot as _getUtot_tm
+        from stochprocsim.models.causal_models import CausalModel as _CausalModel_tm
+        _U_getutot = _getUtot_tm(Causal_Models[pick_N].angles_NTU)
+        _cm_getutot = _CausalModel_tm(U=_U_getutot, states=Causal_Models[pick_N].states,
+                                        angles_NTU=Causal_Models[pick_N].angles_NTU,
+                                        angles_GU=Causal_Models[pick_N].angles_GU, name="getutot")
+        sim = Simulator(QuantumTransitionModel(_cm_getutot))
+        _p = sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        p_theory = np.array([1 - sum(_p) if b == "coinc_ch7"
+                              else (_p[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p) else 0.0)
+                              for b in bins])
+
+        # true_theory bars: the frozen U_theo matrix's own prediction
+        sim_true = Simulator(QuantumTransitionModel(Causal_Models[pick_N]))
+        _p_true = sim_true.get_output_distribution(propagate_outputs=True, start_state=0)
+        true_theory = np.array([1 - sum(_p_true) if b == "coinc_ch7"
+                                 else (_p_true[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p_true) else 0.0)
+                                 for b in bins])
+
+        # exact model (uniform-renewal theory) -- the red dashed bars
+        from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_tm2
+        _probs = _get_uniform_renewal_tm2(pick_N - 1).probs
+        _exit, _a_prod = [], 1.0
+        for _p_survive in _probs:
+            _exit.append((1 - _p_survive) * _a_prod)
+            _a_prod *= _p_survive
+        _exit.append(_a_prod)
+        p_exact = np.array([0.0 if b == "coinc_ch7"
+                             else (_exit[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_exit) else 0.0)
+                             for b in bins])
+
+        _keep = [b == "coinc_ch7" or loop_pass_k(b, bins) <= pick_N for b in bins]
+        bins_trunc = [b for b, _m in zip(bins, _keep) if _m]
+        frac, yerr = frac[bins_trunc], yerr[bins_trunc]
+        p_theory, p_exact, true_theory = p_theory[_keep], p_exact[_keep], true_theory[_keep]
+        theory_residual = float(np.abs(frac.to_numpy() - p_theory).sum())
+
+        return {
+            "stem": stem, "T": T, "T_err": T_err,
+            "frac": frac, "yerr": yerr, "bins": bins_trunc,
+            "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
+            "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
+            "theory_residual": theory_residual,
+        }
+
+    theory_match_tmeasured = {_n: _theory_match_stats_tmeasured(_stem, _n)
+                               for _n, (_stem, _score) in _best_tmeasured.items() if _stem}
+    for _n, _r in theory_match_tmeasured.items():
+        print(f"N{_n} closest-to-theory (T_measured): {_r['stem']}  T={_r['T']:.3f}+/-{_r['T_err']:.3f}  "
+              f"residual={_r['theory_residual']:.4f}  KL point={_r['point_kl']:.6f}  "
+              f"MC={_r['mc_mean']:.6f}+/-{_r['mc_std']:.6f}")
+
+    _frac_by_n = {_n: _r["frac"] for _n, _r in theory_match_tmeasured.items()}
+    _yerr_by_n = {_n: _r["yerr"] for _n, _r in theory_match_tmeasured.items()}
+    _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in theory_match_tmeasured.items()}
+    _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in theory_match_tmeasured.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in theory_match_tmeasured.items()}
+    _titles = {_n: f"N={_n}  T_measured={_r['T']:.3f}±{_r['T_err']:.3f}\nresidual={_r['theory_residual']:.3f}  KL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
+               for _n, _r in theory_match_tmeasured.items()}
+    plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
+                     f"Closest-to-theory-U output distributions, T_measured (last {_SEARCH_WINDOW_DAYS_TM} days)",
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
+    return (theory_match_tmeasured,)
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    DATA_PATH,
+    QuantumTransitionModel,
+    Simulator,
+    background_rate_by_channel,
+    block_rate_mean_std,
+    drop_count_outliers,
+    efficiency_for_channel,
+    kl_rate_from_output_distribution,
+    kl_rate_mc_error,
+    loop_pass_k,
+    np,
+    pd,
+    plot_state_grid,
+):
+    # Same idea as the T_measured cell above, but the loss correction is
+    # T_fit: per-file, fit T by minimizing the squared residual between
+    # the corrected s0 frac and theory_U directly (same recipe as this
+    # notebook's own T_fit cell earlier, minimize_scalar over bounds
+    # (0.05, 1)) rather than reading a measured/calibrated transmission.
+    # Because T_fit is already optimized file-by-file to match theory_U
+    # as closely as that file's shape allows, its leftover residual tends
+    # to run much smaller than T_measured's -- this is expected, not a
+    # sign T_fit picks are somehow "better" data; T_fit can paper over a
+    # genuinely different per-loop loss with a shape-only fit that
+    # T_measured (a real, independent transmission measurement) can't.
+    from scipy.optimize import minimize_scalar as _minimize_scalar_tfit
+
+    _data_dir = DATA_PATH.parent
+    import datetime as _dt_tfit
+    import re as _re_tfit
+
+    def _fit_T_tfit(rates_s0, bg, eff, bins, pick_n, p_theory0):
+        _k = np.array([pick_n if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        def _resid(T):
+            _corr = ((rates_s0 - bg) / eff) / T ** _k
+            return np.sum((p_theory0 - _corr / _corr.clip(lower=0).sum()) ** 2)
+        return _minimize_scalar_tfit(_resid, bounds=(0.05, 1), method="bounded").x
+
+    def _quick_theory_residual_tfit(stem, pick_n):
+        _json_path = _data_dir / f"{stem}.json"
+        _csv_path = _data_dir / f"{stem}.csv"
+        if not _json_path.exists() or not _csv_path.exists():
+            return None
+        _cols = pd.read_csv(_csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        _bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            _bins = _bins + ["coinc_ch7"]
+        _data = pd.read_csv(_csv_path)
+        _data = _data.dropna(subset=_bins + ["herald", "int_time", "input_state"])
+        _data = _data[_data["herald"] > 0]
+        _s0 = _data[_data["input_state"] == 0]
+        if "basis" in _s0.columns:
+            _s0 = _s0[_s0["basis"].isna()]
+        if len(_s0) < 10:
+            return None
+        _s0 = drop_count_outliers(_s0, _bins)
+        _rates = _s0[_bins].sum() / _s0["int_time"].sum()
+        _bg_by_ch, _ = background_rate_by_channel(_json_path)
+        _bg = pd.Series({b: _bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in _bins})
+        _eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in _bins})
+
+        _sim = Simulator(QuantumTransitionModel(Causal_Models[pick_n]))
+        _p = _sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        _p_theory = np.array([1 - sum(_p) if b == "coinc_ch7"
+                               else (_p[loop_pass_k(b, _bins) - 1] if loop_pass_k(b, _bins) <= len(_p) else 0.0)
+                               for b in _bins])
+        _T = _fit_T_tfit(_rates, _bg, _eff, _bins, pick_n, _p_theory)
+        _k = np.array([pick_n if b == "coinc_ch7" else loop_pass_k(b, _bins) for b in _bins])
+        _corr = ((_rates - _bg) / _eff) / _T ** _k
+        _total = _corr.clip(lower=0).sum()
+        if _total <= 0:
+            return None
+        _frac = (_corr.clip(lower=0) / _total).to_numpy()
+        _keep = [b == "coinc_ch7" or loop_pass_k(b, _bins) <= pick_n for b in _bins]
+        return float(np.abs(_frac[_keep] - _p_theory[_keep]).sum())
+
+    _SEARCH_WINDOW_DAYS_TF = 21
+    _cutoff_tfit = (_dt_tfit.datetime.now() - _dt_tfit.timedelta(days=_SEARCH_WINDOW_DAYS_TF)).strftime("%Y%m%d_%H%M%S")
+
+    _best_tfit = {_n: (None, float("inf")) for _n in (3, 4, 5, 6)}
+    for _fp in sorted(_data_dir.glob("*measurement_N*.csv")):
+        _ts_match = _re_tfit.search(r"\d{8}_\d{6}", _fp.name)
+        _n_match = _re_tfit.search(r"_N(\d+)_", _fp.name)
+        if not _ts_match or not _n_match or _ts_match.group() < _cutoff_tfit:
+            continue
+        _n = int(_n_match.group(1))
+        if _n not in _best_tfit:
+            continue
+        _residual = _quick_theory_residual_tfit(_fp.stem, _n)
+        if _residual is not None and _residual < _best_tfit[_n][1]:
+            _best_tfit[_n] = (_fp.stem, _residual)
+
+    def _theory_match_stats_tfit(stem, pick_N):
+        json_path = _data_dir / f"{stem}.json"
+        csv_path = _data_dir / f"{stem}.csv"
+
+        _cols = pd.read_csv(csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            bins = bins + ["coinc_ch7"]
+        data = pd.read_csv(csv_path)
+        data = data.dropna(subset=bins + ["herald", "int_time", "input_state"])
+        data = data[data["herald"] > 0]
+        s0 = data[data["input_state"] == 0]
+        if "basis" in s0.columns:
+            s0 = s0[s0["basis"].isna()]
+        s0 = drop_count_outliers(s0, bins)
+
+        rates, stds = block_rate_mean_std(s0, bins, block_size=30)
+        bg_by_ch, _ = background_rate_by_channel(json_path)
+        bg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins})
+        eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins})
+
+        # theory bars (and the fit target for T_fit below): getUtot(angles_NTU),
+        # per 2026-11-24 request
+        from stochprocsim.libraries.optics_lib import getUtot as _getUtot_tf
+        from stochprocsim.models.causal_models import CausalModel as _CausalModel_tf
+        _U_getutot = _getUtot_tf(Causal_Models[pick_N].angles_NTU)
+        _cm_getutot = _CausalModel_tf(U=_U_getutot, states=Causal_Models[pick_N].states,
+                                        angles_NTU=Causal_Models[pick_N].angles_NTU,
+                                        angles_GU=Causal_Models[pick_N].angles_GU, name="getutot")
+        sim = Simulator(QuantumTransitionModel(_cm_getutot))
+        _p = sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        p_theory = np.array([1 - sum(_p) if b == "coinc_ch7"
+                              else (_p[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p) else 0.0)
+                              for b in bins])
+        T = _fit_T_tfit(rates, bg, eff, bins, pick_N, p_theory)
+        T_err = 0.0  # no uncertainty on a per-file shape fit, unlike a direct measurement
+
+        # true_theory bars: the frozen U_theo matrix's own prediction
+        sim_true = Simulator(QuantumTransitionModel(Causal_Models[pick_N]))
+        _p_true = sim_true.get_output_distribution(propagate_outputs=True, start_state=0)
+        true_theory = np.array([1 - sum(_p_true) if b == "coinc_ch7"
+                                 else (_p_true[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p_true) else 0.0)
+                                 for b in bins])
+
+        # exact model (uniform-renewal theory) -- the red dashed bars
+        from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_tf2
+        _probs = _get_uniform_renewal_tf2(pick_N - 1).probs
+        _exit, _a_prod = [], 1.0
+        for _p_survive in _probs:
+            _exit.append((1 - _p_survive) * _a_prod)
+            _a_prod *= _p_survive
+        _exit.append(_a_prod)
+        p_exact = np.array([0.0 if b == "coinc_ch7"
+                             else (_exit[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_exit) else 0.0)
+                             for b in bins])
+
+        k = np.array([pick_N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        transmission = T ** k
+        corr = ((rates - bg) / eff) / transmission
+        norm = corr.clip(lower=0).sum()
+        frac = corr.clip(lower=0) / norm
+        yerr = ((stds / eff) / transmission) / norm
+        point_kl = kl_rate_from_output_distribution(pick_N, frac.to_numpy()[:pick_N])
+        mc_mean, mc_std, mc_converged = kl_rate_mc_error(pick_N, rates, stds, T, T_err, bg, eff, bins,
+                                                           n_samples=300, rng=np.random.default_rng(0),
+                                                           check_convergence=True)
+        if not mc_converged:
+            print(f"  WARNING: N{pick_N} (T_fit) MC error estimate may not have converged at 300 "
+                  f"samples (two independent halves disagreed by >20%) -- treat mc_std as approximate")
+
+        _keep = [b == "coinc_ch7" or loop_pass_k(b, bins) <= pick_N for b in bins]
+        bins_trunc = [b for b, _m in zip(bins, _keep) if _m]
+        frac, yerr = frac[bins_trunc], yerr[bins_trunc]
+        p_theory, p_exact, true_theory = p_theory[_keep], p_exact[_keep], true_theory[_keep]
+        theory_residual = float(np.abs(frac.to_numpy() - p_theory).sum())
+
+        return {
+            "stem": stem, "T": T, "T_err": T_err,
+            "frac": frac, "yerr": yerr, "bins": bins_trunc,
+            "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
+            "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
+            "theory_residual": theory_residual,
+        }
+
+    theory_match_tfit = {_n: _theory_match_stats_tfit(_stem, _n)
+                          for _n, (_stem, _score) in _best_tfit.items() if _stem}
+    for _n, _r in theory_match_tfit.items():
+        print(f"N{_n} closest-to-theory (T_fit): {_r['stem']}  T_fit={_r['T']:.3f}  "
+              f"residual={_r['theory_residual']:.4f}  KL point={_r['point_kl']:.6f}  "
+              f"MC={_r['mc_mean']:.6f}+/-{_r['mc_std']:.6f}")
+
+    _frac_by_n = {_n: _r["frac"] for _n, _r in theory_match_tfit.items()}
+    _yerr_by_n = {_n: _r["yerr"] for _n, _r in theory_match_tfit.items()}
+    _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in theory_match_tfit.items()}
+    _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in theory_match_tfit.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in theory_match_tfit.items()}
+    _titles = {_n: f"N={_n}  T_fit={_r['T']:.3f}\nresidual={_r['theory_residual']:.3f}  KL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
+               for _n, _r in theory_match_tfit.items()}
+    plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
+                     f"Closest-to-theory-U output distributions, T_fit (last {_SEARCH_WINDOW_DAYS_TF} days)",
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
+    return (theory_match_tfit,)
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    QuantumTransitionModel,
+    Simulator,
+    fig_download_button,
+    mo,
+    np,
+    plt,
+    sns,
+    theory_match_tfit,
+    theory_match_tmeasured,
+):
+    # same KL-rate-vs-N plot as the "best picks" version earlier in this
+    # notebook, but with TWO experimental series -- the T_measured and
+    # T_fit closest-to-theory_U picks above -- plotted as separate lines
+    # instead of one. Theory curves (quantum target, classical bound) are
+    # identical either way, only the plotted measured points differ.
+    from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_tm
+    from stochprocsim.stochprocq.measure import eval_diverge as _eval_diverge_tm
+    from stochprocsim.utils import generate_quantum_model as _generate_quantum_model_tm
+
+    def _sim_quantum_tm(n):
+        _cs = Causal_Models[n]
+        _cs.set_U(_cs.U_theo)
+        _q = _generate_quantum_model_tm(
+            np.array(Simulator(QuantumTransitionModel(_cs)).get_output_distribution()))
+        _m = _get_uniform_renewal_tm(n - 1)
+        _p_dist = _m.steady_state @ _m.gen_dists(n + 1)
+        _q_dist = _q.steady_state @ _q.gen_dists(n + 1)
+        return _eval_diverge_tm(_p_dist, _q_dist, his_steps=n - 1)
+
+    def _get_bd_tm(N):
+        _bd = 0
+        for _n in range(1, 9):
+            new_bd = _get_uniform_renewal_tm(_n - 1).classical_bd(N, target_dim=2)
+            _bd = max(_bd, new_bd)
+        return _bd
+
+    _NMIN, _NMAX, _C_BUFF = 3, 6, 1
+    _x_quant = list(range(_NMIN, _NMAX + 1))
+    _x_class = list(range(_NMIN, _NMAX + _C_BUFF))
+    _y_quantum = [_sim_quantum_tm(_n) for _n in _x_quant]
+
+    _ls = [3, 4, 5, 6]
+    _y_classical = [_get_bd_tm(_n) for _n in _ls]
+    _qtheo_yerr = [0.002054339006460678, 0.0014301897956533847, 0.0016754397869550568, 0.0015075218255867487]
+
+    _x_exp_tmeasured = sorted(theory_match_tmeasured)
+    rate_exp_tmeasured = [theory_match_tmeasured[_n]["mc_mean"] for _n in _x_exp_tmeasured]
+    rate_exp_tmeasured_err = [theory_match_tmeasured[_n]["mc_std"] for _n in _x_exp_tmeasured]
+
+    _x_exp_tfit = sorted(theory_match_tfit)
+    rate_exp_tfit = [theory_match_tfit[_n]["mc_mean"] for _n in _x_exp_tfit]
+    rate_exp_tfit_err = [theory_match_tfit[_n]["mc_std"] for _n in _x_exp_tfit]
+
+    _c_classical, _c_quantum = "#3B5BA5", "#4C9A2A"
+    _c_exp_tmeasured, _c_exp_tfit = "#C9700E", "#1F9E89"
+    _x_c, _y_c = np.array(_x_class), np.array(_y_classical)
+    _y_q, _e_q = np.array(_y_quantum), np.array(_qtheo_yerr)
+
+    with sns.axes_style("whitegrid"):
+        _fig, _ax = plt.subplots()
+        _ax.plot(_x_c, _y_c, "-D", color=_c_classical, linewidth=1.5, label="Classical bound")
+        _ax.errorbar(_x_quant, _y_q, yerr=_e_q, fmt="-^", capsize=3, color=_c_quantum,
+                      linewidth=1.5, label="Quantum (Target)")
+        _ax.fill_between(_x_quant, _y_q - _e_q, _y_q + _e_q, color=_c_quantum, alpha=0.2)
+        _ax.errorbar(_x_exp_tmeasured, rate_exp_tmeasured, yerr=rate_exp_tmeasured_err, fmt="s--", capsize=3,
+                      color=_c_exp_tmeasured, linewidth=1.5, label="Exp (closest to theory_U, T_measured)")
+        _ax.errorbar(_x_exp_tfit, rate_exp_tfit, yerr=rate_exp_tfit_err, fmt="^--", capsize=3,
+                      color=_c_exp_tfit, linewidth=1.5, label="Exp (closest to theory_U, T_fit)")
+        _ax.fill_between(_x_c, _y_c, _ax.get_ylim()[1], alpha=0.3, color="none",
+                          edgecolor=_c_classical, hatch="///")
+        _ax.set_xticks(_x_c)
+        _ax.set_ylim(0, 0.4)
+        _ax.set_xlabel("Process length N")
+        _ax.set_ylabel(r"$R_{KL}$")
+        _ax.set_title("KL Divergence Rate for Process Depth N (picks ranked by theory_U match)")
+        _ax.legend(frameon=True, fontsize=8)
+    mo.vstack([_fig, fig_download_button(_fig, "kl_divergence_rate_vs_N_theory_match.svg")])
+    return
+
+
+@app.cell(hide_code=True)
+def _(fig_download_button, mo, plt, sns):
+    # classical bound vs. N, extended beyond the N=3..6 range used in the
+    # experimental-comparison plot above -- same get_bd(N) recipe as that
+    # cell: for each N, take the max classical_bd over uniform-renewal
+    # models of length 1..8.
+    #
+    # NOTE: capped at N=15, not N=100. classical_bd(N, ...) calls
+    # gen_dists(N, ...) which allocates a DENSE np.zeros((dim,
+    # 2**N)) array regardless of the sparse flag -- so cost grows as
+    # 2**N. Measured on this machine: N=14 takes ~1.4s per get_bd() call,
+    # N=18 ~20s, and the loop below (N=3..16) already totals ~11.5s
+    # cumulative; N=100 would need on the order of 2**100 array entries,
+    # i.e. not completable. N=15 keeps the whole cell at ~6s.
+    from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal
+
+    def _get_bd(N):
+        """Get the classical bound for a given N."""
+        _bd = 0
+        for _n in range(1, 9):
+            new_bd = _get_uniform_renewal(_n - 1).classical_bd(N, target_dim=2)
+            _bd = max(_bd, new_bd)
+        return _bd
+
+    _x_bd = list(range(3, 15))
+    _y_bd = [_get_bd(_n) for _n in _x_bd]
+
+    with sns.axes_style("whitegrid"):
+        _fig_bd, _ax_bd = plt.subplots()
+        _ax_bd.plot(_x_bd, _y_bd, "-", color="#3B5BA5", linewidth=1.5)
+        _ax_bd.set_xlabel("Process length N")
+        _ax_bd.set_ylabel(r"$R_{KL}$")
+        _ax_bd.set_title("Classical Bound vs. N")
+    mo.vstack([_fig_bd, fig_download_button(_fig_bd, "classical_bound_vs_N.svg")])
     return
 
 
@@ -969,6 +1753,362 @@ def _(
         return _exp, _theory, _exact
 
     dist_by_N = {n: _dist_for_N(n) for n in sorted(_BEST_FILES_3D)}
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    DATA_PATH,
+    QuantumTransitionModel,
+    Simulator,
+    background_rate_by_channel,
+    block_rate_mean_std,
+    drop_count_outliers,
+    efficiency_for_channel,
+    get_best_picks,
+    kl_rate_from_output_distribution,
+    kl_rate_mc_error,
+    loop_pass_k,
+    loss_calibration_for,
+    np,
+    pd,
+    plot_state_grid,
+):
+    # Trial: same picks/pipeline as the "best rated" cell earlier in this
+    # notebook, but instead of truncating away loop passes beyond this
+    # N (pure noise/crosstalk per that cell's own comment) and plotting
+    # coinc_ch7 as a bare dump-channel bin, fold passes N..6 AND the dump
+    # channel into one "remainder" bin -- the loss-corrected sum of
+    # every channel from the Nth loop pass through ch7. This matches
+    # theory_U's own dump definition (1 - sum of passes 1..N-1), which
+    # already implicitly bundles "pass N onward" into one number rather
+    # than predicting each tail pass individually -- this makes the
+    # measured side bundle the same way instead of discarding those
+    # counts outright (see 2026-11-24 conversation: "why only N+1
+    # channels, there should always be the full number").
+    BEST_PICKS_REMAINDER = get_best_picks()
+    _data_dir = DATA_PATH.parent
+
+    def _best_pick_stats_remainder(stem, pick_N, loss_key, err_key):
+        json_path = _data_dir / f"{stem}.json"
+        csv_path = _data_dir / f"{stem}.csv"
+        losses, cal_note = loss_calibration_for(json_path)
+        T, T_err = losses[loss_key], losses.get(err_key) or 0.0
+
+        _cols = pd.read_csv(csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            bins = bins + ["coinc_ch7"]
+        data = pd.read_csv(csv_path)
+        data = data.dropna(subset=bins + ["herald", "int_time", "input_state"])
+        data = data[data["herald"] > 0]
+        s0 = data[data["input_state"] == 0]
+        if "basis" in s0.columns:
+            s0 = s0[s0["basis"].isna()]
+        s0 = drop_count_outliers(s0, bins)
+
+        rates, stds = block_rate_mean_std(s0, bins, block_size=30)
+        bg_by_ch, bg_note = background_rate_by_channel(json_path)
+        bg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins})
+        eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins})
+
+        k = np.array([pick_N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        transmission = T ** k
+        corr = ((rates - bg) / eff) / transmission
+        norm = corr.clip(lower=0).sum()
+        frac_full = corr.clip(lower=0) / norm
+        yerr_full = ((stds / eff) / transmission) / norm
+        point_kl = kl_rate_from_output_distribution(pick_N, frac_full.to_numpy()[:pick_N])
+        mc_mean, mc_std, mc_converged = kl_rate_mc_error(pick_N, rates, stds, T, T_err, bg, eff, bins,
+                                                           n_samples=300, rng=np.random.default_rng(0),
+                                                           check_convergence=True)
+        if not mc_converged:
+            print(f"  WARNING: N{pick_N} MC error estimate may not have converged at 300 samples "
+                  f"(two independent halves disagreed by >20%) -- treat mc_std as approximate")
+
+        # theory bars: getUtot(angles_NTU), per 2026-11-24 request
+        from stochprocsim.libraries.optics_lib import getUtot as _getUtot_rem
+        from stochprocsim.models.causal_models import CausalModel as _CausalModel_rem
+        _U_getutot = _getUtot_rem(Causal_Models[pick_N].angles_NTU)
+        _cm_getutot = _CausalModel_rem(U=_U_getutot, states=Causal_Models[pick_N].states,
+                                         angles_NTU=Causal_Models[pick_N].angles_NTU,
+                                         angles_GU=Causal_Models[pick_N].angles_GU, name="getutot")
+        sim = Simulator(QuantumTransitionModel(_cm_getutot))
+        _p = sim.get_output_distribution(propagate_outputs=True, start_state=0)
+        p_theory_full = np.array([1 - sum(_p) if b == "coinc_ch7"
+                              else (_p[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p) else 0.0)
+                              for b in bins])
+
+        # true_theory bars: the frozen U_theo matrix's own prediction
+        sim_true = Simulator(QuantumTransitionModel(Causal_Models[pick_N]))
+        _p_true = sim_true.get_output_distribution(propagate_outputs=True, start_state=0)
+        true_theory_full = np.array([1 - sum(_p_true) if b == "coinc_ch7"
+                                 else (_p_true[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_p_true) else 0.0)
+                                 for b in bins])
+
+        from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_rem
+        _probs = _get_uniform_renewal_rem(pick_N - 1).probs
+        _exit, _a_prod = [], 1.0
+        for _p_survive in _probs:
+            _exit.append((1 - _p_survive) * _a_prod)
+            _a_prod *= _p_survive
+        _exit.append(_a_prod)
+        p_exact_full = np.array([0.0 if b == "coinc_ch7"
+                             else (_exit[loop_pass_k(b, bins) - 1] if loop_pass_k(b, bins) <= len(_exit) else 0.0)
+                             for b in bins])
+
+        # keep passes 1..N-1 individually; fold pass N, N+1..6 and the
+        # ch7 dump into one "remainder" bin for frac/p_theory/p_exact
+        # alike (tail errors combined in quadrature, independent shot
+        # noise per channel)
+        _head = [b for b in bins if b != "coinc_ch7" and loop_pass_k(b, bins) < pick_N]
+        _tail = [b for b in bins if b == "coinc_ch7" or loop_pass_k(b, bins) >= pick_N]
+        _head_idx = [bins.index(b) for b in _head]
+        _tail_idx = [bins.index(b) for b in _tail]
+
+        frac = frac_full[_head].copy()
+        frac["remainder"] = frac_full[_tail].sum()
+        yerr = yerr_full[_head].copy()
+        yerr["remainder"] = float(np.sqrt((yerr_full[_tail] ** 2).sum()))
+        p_theory = np.append(p_theory_full[_head_idx], p_theory_full[_tail_idx].sum())
+        p_exact = np.append(p_exact_full[_head_idx], p_exact_full[_tail_idx].sum())
+        true_theory = np.append(true_theory_full[_head_idx], true_theory_full[_tail_idx].sum())
+        bins_trunc = _head + ["remainder"]
+
+        theory_residual = float(np.abs(frac.to_numpy() - p_theory).sum())
+
+        return {
+            "stem": stem, "T": T, "T_err": T_err, "cal_note": cal_note,
+            "frac": frac, "yerr": yerr, "bins": bins_trunc,
+            "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
+            "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
+            "theory_residual": theory_residual,
+        }
+
+    best_results_remainder = {_n: _best_pick_stats_remainder(_stem, _n, _lk, _ek)
+                               for _n, (_stem, _lk, _ek) in BEST_PICKS_REMAINDER.items()}
+    for _n, _r in best_results_remainder.items():
+        print(f"N{_n} best (remainder trial): {_r['stem']}  T={_r['T']:.4f}+/-{_r['T_err']:.4f} ({_r['cal_note']})  "
+              f"point={_r['point_kl']:.6f}  MC={_r['mc_mean']:.6f}+/-{_r['mc_std']:.6f}")
+
+    _frac_by_n = {_n: _r["frac"] for _n, _r in best_results_remainder.items()}
+    _yerr_by_n = {_n: _r["yerr"] for _n, _r in best_results_remainder.items()}
+    _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in best_results_remainder.items()}
+    _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in best_results_remainder.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in best_results_remainder.items()}
+    _titles = {_n: f"N={_n}  T={_r['T']:.3f}±{_r['T_err']:.3f}\nKL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
+               for _n, _r in best_results_remainder.items()}
+    plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
+                     "Current best-rated (last week) output distributions vs theory (ch7 -> remainder trial)",
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
+    return (best_results_remainder,)
+
+
+@app.cell(hide_code=True)
+def _(
+    DATA_PATH,
+    background_rate_by_channel,
+    block_rate_mean_std,
+    drop_count_outliers,
+    efficiency_for_channel,
+    get_best_picks,
+    kl_rate_from_output_distribution,
+    loop_pass_k,
+    loss_calibration_for,
+    np,
+    pd,
+):
+    # Does folding the remainder (loop-pass N..6 plus the ch7 dump) into
+    # kl_rate_from_output_distribution's own final bin change the KL
+    # number, rather than just the plot? The usual call sites truncate
+    # with frac.to_numpy()[:N], which keeps only the raw channel-N count
+    # and silently throws away any counts that leaked into channels
+    # N+1..ch7 -- even though the function's own docstring says that
+    # last bin is meant to be a catch-all "everything else", matching
+    # theory_U's own dump definition (1 - sum of passes 1..N-1).
+    _data_dir = DATA_PATH.parent
+
+    def _kl_naive_vs_folded(stem, pick_N, loss_key, err_key):
+        json_path = _data_dir / f"{stem}.json"
+        csv_path = _data_dir / f"{stem}.csv"
+        losses, _ = loss_calibration_for(json_path)
+        T = losses[loss_key]
+
+        _cols = pd.read_csv(csv_path, nrows=0).columns
+        _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+        bins = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+        if "coinc_ch7" in _cols:
+            bins = bins + ["coinc_ch7"]
+        data = pd.read_csv(csv_path)
+        data = data.dropna(subset=bins + ["herald", "int_time", "input_state"])
+        data = data[data["herald"] > 0]
+        s0 = data[data["input_state"] == 0]
+        if "basis" in s0.columns:
+            s0 = s0[s0["basis"].isna()]
+        s0 = drop_count_outliers(s0, bins)
+
+        rates, _ = block_rate_mean_std(s0, bins, block_size=30)
+        bg_by_ch, _ = background_rate_by_channel(json_path)
+        bg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins})
+        eff = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins})
+
+        k = np.array([pick_N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+        corr = ((rates - bg) / eff) / (T ** k)
+        frac_full = corr.clip(lower=0) / corr.clip(lower=0).sum()
+
+        naive = frac_full.to_numpy()[:pick_N]
+
+        _head = [b for b in bins if b != "coinc_ch7" and loop_pass_k(b, bins) < pick_N]
+        _tail = [b for b in bins if b == "coinc_ch7" or loop_pass_k(b, bins) >= pick_N]
+        folded = np.append(frac_full[_head].to_numpy(), frac_full[_tail].sum())
+
+        return (kl_rate_from_output_distribution(pick_N, naive),
+                kl_rate_from_output_distribution(pick_N, folded), naive, folded)
+
+    for _n, (_stem, _lk, _ek) in get_best_picks().items():
+        _kl_naive, _kl_folded, _naive, _folded = _kl_naive_vs_folded(_stem, _n, _lk, _ek)
+        _delta = _kl_folded - _kl_naive
+        print(f"N{_n} {_stem}: naive={_kl_naive:.6f}  folded={_kl_folded:.6f}  "
+              f"delta={_delta:+.6f}  ({'better' if _delta < 0 else 'worse' if _delta > 0 else 'same'})")
+        print(f"  naive  (tail dropped): {np.round(_naive, 4)}")
+        print(f"  folded (tail kept):    {np.round(_folded, 4)}")
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    Causal_Models,
+    QuantumTransitionModel,
+    Simulator,
+    background_rate_by_channel,
+    drop_count_outliers,
+    efficiency_for_channel,
+    get_best_picks,
+    loop_pass_k,
+    loss_calibration_for,
+    np,
+    pd,
+    plot_state_grid,
+):
+    from stochprocsim.stochprocq.measure import eval_diverge as _eval_diverge_pg
+    from stochprocsim.utils import generate_quantum_model as _generate_quantum_model_pg
+
+    # Playground: the actual getUtot() unitary math (stochprocsim's
+    # "theory U" builder, src/stochprocsim/libraries/optics_lib.py),
+    # inlined and exposed as plain matrix multiplications instead of a
+    # single opaque function call -- edit ANGLES below (or the matrix
+    # product itself, e.g. drop/reorder/add a component) and rerun to
+    # see how PLAYGROUND_KL moves. Pulls whatever file is currently
+    # BEST_PICKS[3] (get_best_picks()), so it always plays with the
+    # current best N=3 data, not a hardcoded filename.
+    from stochprocsim.libraries.optics_lib import (
+        HWP_p1, HWP_p2, QWP_p1, QWP_p2, PBS, PBS_dag, M4,
+    )
+    from stochprocsim.models.causal_models import CausalModel
+
+    PICK_N = 3
+
+    # ---- EDITABLE: waveplate/mirror angles (degrees) + global phase ----
+    # starting point = this N's own calibrated angles (U_{N}_angles_NTU in
+    # waveplate_angles.py) -- change any value, or the matrix product
+    # below, and rerun this cell.
+    ANGLES = dict(Causal_Models[PICK_N].angles_NTU)  # copy, not the shared original
+    PIPI = ANGLES["pipi"]
+
+    # ---- the unitary itself, same product as getUtot(), written out ----
+    U_playground = (
+        HWP_p2(ANGLES["θhf2"]) @ QWP_p2(ANGLES["θqf2"])
+        @ HWP_p1(ANGLES["θhf1"]) @ QWP_p1(ANGLES["θqf1"])
+        @ PBS_dag
+        @ M4(ANGLES["Φm3"], ANGLES["Φm1"])
+        @ M4(ANGLES["Φm2"], ANGLES["Φm2"])
+        @ M4(ANGLES["Φm1"], ANGLES["Φm3"])
+        @ HWP_p2(ANGLES["θh2"]) @ QWP_p2(ANGLES["θq2"])
+        @ HWP_p1(ANGLES["θh1"]) @ QWP_p1(ANGLES["θq1"])
+        @ PBS
+        @ HWP_p2(ANGLES["θhin2"]) @ QWP_p2(ANGLES["θqin2"])
+    )
+    U_playground = np.exp(-1j * PIPI) * U_playground
+
+    # local CausalModel so this never mutates the shared Causal_Models[N]
+    # used everywhere else in the notebook
+    cm_playground = CausalModel(
+        U=U_playground, states=Causal_Models[PICK_N].states,
+        angles_NTU=Causal_Models[PICK_N].angles_NTU,
+        angles_GU=Causal_Models[PICK_N].angles_GU, name="playground",
+    )
+
+    # ---- pull counts: whatever's currently BEST_PICKS[PICK_N] ----
+    _stem, _loss_key, _err_key = get_best_picks()[PICK_N]
+    from pathlib import Path as _Path_playground
+    _data_dir = _Path_playground("/home/brendan/Documents/PhD/Programs/stochprocsim/data")
+    _json_path = _data_dir / f"{_stem}.json"
+    _csv_path = _data_dir / f"{_stem}.csv"
+
+    _losses, _ = loss_calibration_for(_json_path)
+    T = _losses[_loss_key]
+
+    _cols = pd.read_csv(_csv_path, nrows=0).columns
+    _coinc = [c for c in _cols if c.startswith("coinc_ch") and c != "coinc_ch7"]
+    bins_pg = sorted(_coinc, key=lambda c: int(c.removeprefix("coinc_ch")))
+    if "coinc_ch7" in _cols:
+        bins_pg = bins_pg + ["coinc_ch7"]
+    data_pg = pd.read_csv(_csv_path)
+    data_pg = data_pg.dropna(subset=bins_pg + ["herald", "int_time", "input_state"])
+    data_pg = data_pg[data_pg["herald"] > 0]
+    s0_pg = data_pg[data_pg["input_state"] == 0]
+    if "basis" in s0_pg.columns:
+        s0_pg = s0_pg[s0_pg["basis"].isna()]
+    s0_pg = drop_count_outliers(s0_pg, bins_pg)
+    rates_pg = s0_pg[bins_pg].sum() / s0_pg["int_time"].sum()
+
+    bg_by_ch, _ = background_rate_by_channel(_json_path)
+    bg_pg = pd.Series({b: bg_by_ch.get(b.removeprefix("coinc_ch"), 0.0) for b in bins_pg})
+    eff_pg = pd.Series({b: efficiency_for_channel(int(b.removeprefix("coinc_ch")), dump_ch=7) for b in bins_pg})
+    k_pg = np.array([PICK_N if b == "coinc_ch7" else loop_pass_k(b, bins_pg) for b in bins_pg])
+    corr_pg = ((rates_pg - bg_pg) / eff_pg) / (T ** k_pg)
+    frac_pg = corr_pg.clip(lower=0) / corr_pg.clip(lower=0).sum()
+
+    # ---- theory output distribution from U_playground ----
+    sim_pg = Simulator(QuantumTransitionModel(cm_playground))
+    _p_pg = sim_pg.get_output_distribution(propagate_outputs=True, start_state=0)
+    p_theory_pg = np.array([1 - sum(_p_pg) if b == "coinc_ch7"
+                             else (_p_pg[loop_pass_k(b, bins_pg) - 1] if loop_pass_k(b, bins_pg) <= len(_p_pg) else 0.0)
+                             for b in bins_pg])
+
+    # ---- true_theory: the frozen U_theo matrix's own prediction, for
+    # comparison against whatever ANGLES/matrix edits you're trying ----
+    sim_true_pg = Simulator(QuantumTransitionModel(Causal_Models[PICK_N]))
+    _p_true_pg = sim_true_pg.get_output_distribution(propagate_outputs=True, start_state=0)
+    true_theory_pg = np.array([1 - sum(_p_true_pg) if b == "coinc_ch7"
+                                else (_p_true_pg[loop_pass_k(b, bins_pg) - 1] if loop_pass_k(b, bins_pg) <= len(_p_true_pg) else 0.0)
+                                for b in bins_pg])
+
+    # KL vs theory_U itself (NOT kl_rate_from_output_distribution, which
+    # compares measured data to the uniform-renewal model and is totally
+    # insensitive to U -- confirmed while building this cell: it returns
+    # the exact same number whether U_playground is the real U_theo or
+    # has angles perturbed. This is the one that will actually move when
+    # you edit ANGLES/the matrix above.
+    theory_model_pg = _generate_quantum_model_pg(p_theory_pg[:PICK_N])
+    exp_model_pg = _generate_quantum_model_pg(frac_pg.to_numpy()[:PICK_N])
+    _p_dist_pg = theory_model_pg.steady_state @ theory_model_pg.gen_dists(PICK_N + 1)
+    _q_dist_pg = exp_model_pg.steady_state @ exp_model_pg.gen_dists(PICK_N + 1)
+    PLAYGROUND_KL = _eval_diverge_pg(_p_dist_pg, _q_dist_pg, his_steps=PICK_N - 1)
+    print(f"playground N={PICK_N}  file={_stem}  T={T:.4f}")
+    print(f"measured:     {np.round(frac_pg.to_numpy(), 4)}")
+    print(f"theory_U:     {np.round(p_theory_pg, 4)}")
+    print(f"true_theory:  {np.round(true_theory_pg, 4)}")
+    print(f"PLAYGROUND_KL (vs theory_U) = {PLAYGROUND_KL:.6f} bits")
+
+    plot_state_grid(
+        {0: frac_pg}, {0: frac_pg * 0}, {0: p_theory_pg},
+        f"Playground: N={PICK_N} ({_stem}) -- KL={PLAYGROUND_KL:.4f}",
+        true_theory={0: true_theory_pg},
+        titles={0: f"T={T:.3f}  KL={PLAYGROUND_KL:.4f}"},
+    )
     return
 
 

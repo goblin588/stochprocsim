@@ -62,27 +62,35 @@ class Simulator:
             a_prod *= a
         return res
 
-    def _get_output_distribution_propagated(self, start_state: int = 0):
-        """Output distribution propagating the output state after each emission."""
+    def get_output_states(self, start_state: int = 0):
+        """Per-loop-step output: the normalized polarisation state emitted at
+        that step, and its emission probability (survival-weighted).
+
+        Returns a list of (state, prob) tuples, one per loop step. `state` is
+        the 2-component normalized complex output polarisation vector (order
+        matches _split_paths' "path1" half, i.e. v[[1, 3]]), or None for a
+        step where nothing was left to emit.
+        """
         model = self._transition_model.model
         s = model.states[start_state].copy()
 
-        transition_probs = []
+        out = []
+        a_prod = 1.0
         for _ in range(len(model)):
             v = model.U @ s
             path2, a, b = _split_paths(v)
-            transition_probs.append((a ** 2, b ** 2))
+            emitted = v[[1, 3]] / b if b > 1e-12 else None
+            out.append((emitted, (b ** 2) * a_prod))
+            a_prod *= a ** 2
             if a < 1e-12:  # everything emitted; no survivor path to propagate
                 s = np.zeros(4, dtype=complex)
             else:
                 s = np.array([path2[0], 0, path2[1], 0], dtype=complex) / a
+        return out
 
-        a_prod = 1
-        res = []
-        for a, b in transition_probs:
-            res.append(b * a_prod)
-            a_prod *= a
-        return res
+    def _get_output_distribution_propagated(self, start_state: int = 0):
+        """Output distribution propagating the output state after each emission."""
+        return [prob for _, prob in self.get_output_states(start_state)]
 
     def sample_counts(self, print_outputs=True):
         """Return average counts [[n0, n1], ...] per loop step with Poisson errors."""
@@ -104,4 +112,24 @@ class Simulator:
         out_file = os.path.join(directory, f"{self.name}_photons_{self._nphotons}.npz")
         np.savez(out_file, outputs=np.array(self.outputs, dtype=object))
         print(f"Saved outputs to {out_file}")
+
+
+def _demo():
+    from .causal_models import Causal_Models
+    from .transition_model import QuantumTransitionModel
+
+    sim = Simulator(QuantumTransitionModel(Causal_Models[4]))
+    states = sim.get_output_states()
+    probs = sim.get_output_distribution(propagate_outputs=True)
+
+    assert len(states) == len(probs) == sim.N
+    for (state, prob), p_ref in zip(states, probs):
+        assert math.isclose(prob, p_ref)
+        if state is not None:
+            assert math.isclose(np.linalg.norm(state), 1.0, abs_tol=1e-9)
+    print("simulation_sampler self-check passed")
+
+
+if __name__ == "__main__":
+    _demo()
 

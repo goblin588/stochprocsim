@@ -1,0 +1,605 @@
+{
+ "N": "5",
+ "label": 0,
+ "delays_ns": {
+  "3": 3841,
+  "4": 2968.2841365388845,
+  "6": 2535.3165253942266,
+  "7": 1215.2208333333333,
+  "8": 2101.9066817915445,
+  "10": 1666.4029499299716,
+  "12": 1235.0762998344667,
+  "14": 813.3762626262627
+ },
+ "thresholds_v": {
+  "3": 0.1,
+  "4": 0.05,
+  "6": 0.05,
+  "8": 0.05,
+  "10": 0.05,
+  "12": 0.05,
+  "14": 0.05,
+  "7": 0.1
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "77eb840",
+ "saved_at": "2026-11-22T22:53:08.099740",
+ "noise_calibration": {
+  "counts": {
+   "herald": 7604996,
+   "singles_ch4": 257049,
+   "coinc_ch4": 141,
+   "singles_ch6": 258547,
+   "coinc_ch6": 96,
+   "singles_ch8": 258444,
+   "coinc_ch8": 45,
+   "singles_ch10": 258446,
+   "coinc_ch10": 45,
+   "singles_ch12": 258473,
+   "coinc_ch12": 37,
+   "singles_ch14": 257991,
+   "coinc_ch14": 222,
+   "singles_ch7": 0,
+   "coinc_ch7": 0,
+   "int_time": 60.028652900015004
+  },
+  "offset_ns": 15.0,
+  "background_rate_hz": {
+   "4": 2.3488782970834374,
+   "6": 1.5992362873759576,
+   "8": 0.7496420097074801,
+   "10": 0.7496420097074801,
+   "12": 0.616372319092817,
+   "14": 3.698233914556902,
+   "7": 0.0
+  },
+  "duration_s": 60.0,
+  "saved_at": "2026-11-20T23:20:23.304786",
+  "git_commit": "6817561",
+  "file": "20261120_232023_noise_calibration.json"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 13008491,
+  "singles_ch4": 1432456,
+  "coinc_ch4": 907,
+  "singles_ch6": 1440094,
+  "coinc_ch6": 233,
+  "singles_ch8": 1439413,
+  "coinc_ch8": 141,
+  "singles_ch10": 1439513,
+  "coinc_ch10": 145,
+  "singles_ch12": 1439678,
+  "coinc_ch12": 190,
+  "singles_ch14": 1436955,
+  "coinc_ch14": 1516,
+  "singles_ch7": 0,
+  "coinc_ch7": 0,
+  "int_time": 100.57516690000102,
+  "bins": [
+   {
+    "timestamp": "2026-11-22T21:31:16.826490",
+    "herald": 651840,
+    "singles_ch4": 71854,
+    "coinc_ch4": 43,
+    "singles_ch6": 72240,
+    "coinc_ch6": 12,
+    "singles_ch8": 72206,
+    "coinc_ch8": 4,
+    "singles_ch10": 72215,
+    "coinc_ch10": 6,
+    "singles_ch12": 72226,
+    "coinc_ch12": 8,
+    "singles_ch14": 72077,
+    "coinc_ch14": 81,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02927020000061
+   },
+   {
+    "timestamp": "2026-11-22T21:31:21.856005",
+    "herald": 648817,
+    "singles_ch4": 71104,
+    "coinc_ch4": 50,
+    "singles_ch6": 71465,
+    "coinc_ch6": 12,
+    "singles_ch8": 71426,
+    "coinc_ch8": 8,
+    "singles_ch10": 71432,
+    "coinc_ch10": 5,
+    "singles_ch12": 71442,
+    "coinc_ch12": 8,
+    "singles_ch14": 71311,
+    "coinc_ch14": 70,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02926910000042
+   },
+   {
+    "timestamp": "2026-11-22T21:31:26.884934",
+    "herald": 651409,
+    "singles_ch4": 71795,
+    "coinc_ch4": 46,
+    "singles_ch6": 72195,
+    "coinc_ch6": 7,
+    "singles_ch8": 72153,
+    "coinc_ch8": 7,
+    "singles_ch10": 72160,
+    "coinc_ch10": 5,
+    "singles_ch12": 72173,
+    "coinc_ch12": 15,
+    "singles_ch14": 72034,
+    "coinc_ch14": 74,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028600600000573
+   },
+   {
+    "timestamp": "2026-11-22T21:31:31.913508",
+    "herald": 650588,
+    "singles_ch4": 71933,
+    "coinc_ch4": 56,
+    "singles_ch6": 72292,
+    "coinc_ch6": 12,
+    "singles_ch8": 72254,
+    "coinc_ch8": 6,
+    "singles_ch10": 72260,
+    "coinc_ch10": 8,
+    "singles_ch12": 72272,
+    "coinc_ch12": 9,
+    "singles_ch14": 72131,
+    "coinc_ch14": 72,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028348199999527
+   },
+   {
+    "timestamp": "2026-11-22T21:31:36.942261",
+    "herald": 650866,
+    "singles_ch4": 71609,
+    "coinc_ch4": 38,
+    "singles_ch6": 71988,
+    "coinc_ch6": 14,
+    "singles_ch8": 71938,
+    "coinc_ch8": 4,
+    "singles_ch10": 71948,
+    "coinc_ch10": 8,
+    "singles_ch12": 71957,
+    "coinc_ch12": 6,
+    "singles_ch14": 71824,
+    "coinc_ch14": 85,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028568200000336
+   },
+   {
+    "timestamp": "2026-11-22T21:31:41.971312",
+    "herald": 651837,
+    "singles_ch4": 71646,
+    "coinc_ch4": 43,
+    "singles_ch6": 72017,
+    "coinc_ch6": 12,
+    "singles_ch8": 71980,
+    "coinc_ch8": 8,
+    "singles_ch10": 71987,
+    "coinc_ch10": 11,
+    "singles_ch12": 71996,
+    "coinc_ch12": 11,
+    "singles_ch14": 71869,
+    "coinc_ch14": 74,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028694199999336
+   },
+   {
+    "timestamp": "2026-11-22T21:31:46.999726",
+    "herald": 649245,
+    "singles_ch4": 71283,
+    "coinc_ch4": 51,
+    "singles_ch6": 71694,
+    "coinc_ch6": 16,
+    "singles_ch8": 71664,
+    "coinc_ch8": 9,
+    "singles_ch10": 71665,
+    "coinc_ch10": 6,
+    "singles_ch12": 71677,
+    "coinc_ch12": 10,
+    "singles_ch14": 71516,
+    "coinc_ch14": 77,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028220099999999
+   },
+   {
+    "timestamp": "2026-11-22T21:31:52.028565",
+    "herald": 650118,
+    "singles_ch4": 71159,
+    "coinc_ch4": 41,
+    "singles_ch6": 71541,
+    "coinc_ch6": 13,
+    "singles_ch8": 71507,
+    "coinc_ch8": 11,
+    "singles_ch10": 71512,
+    "coinc_ch10": 5,
+    "singles_ch12": 71519,
+    "coinc_ch12": 5,
+    "singles_ch14": 71385,
+    "coinc_ch14": 80,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028568799999448
+   },
+   {
+    "timestamp": "2026-11-22T21:31:57.058374",
+    "herald": 650345,
+    "singles_ch4": 71602,
+    "coinc_ch4": 45,
+    "singles_ch6": 71957,
+    "coinc_ch6": 8,
+    "singles_ch8": 71925,
+    "coinc_ch8": 5,
+    "singles_ch10": 71932,
+    "coinc_ch10": 5,
+    "singles_ch12": 71941,
+    "coinc_ch12": 17,
+    "singles_ch14": 71801,
+    "coinc_ch14": 62,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029586100000415
+   },
+   {
+    "timestamp": "2026-11-22T21:32:02.088021",
+    "herald": 650610,
+    "singles_ch4": 71980,
+    "coinc_ch4": 44,
+    "singles_ch6": 72349,
+    "coinc_ch6": 14,
+    "singles_ch8": 72322,
+    "coinc_ch8": 7,
+    "singles_ch10": 72329,
+    "coinc_ch10": 9,
+    "singles_ch12": 72335,
+    "coinc_ch12": 10,
+    "singles_ch14": 72204,
+    "coinc_ch14": 100,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029401099999632
+   },
+   {
+    "timestamp": "2026-11-22T21:32:07.117553",
+    "herald": 650515,
+    "singles_ch4": 71855,
+    "coinc_ch4": 40,
+    "singles_ch6": 72264,
+    "coinc_ch6": 11,
+    "singles_ch8": 72234,
+    "coinc_ch8": 11,
+    "singles_ch10": 72238,
+    "coinc_ch10": 9,
+    "singles_ch12": 72244,
+    "coinc_ch12": 8,
+    "singles_ch14": 72100,
+    "coinc_ch14": 77,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0291643999999
+   },
+   {
+    "timestamp": "2026-11-22T21:32:12.147043",
+    "herald": 650680,
+    "singles_ch4": 71124,
+    "coinc_ch4": 44,
+    "singles_ch6": 71503,
+    "coinc_ch6": 10,
+    "singles_ch8": 71482,
+    "coinc_ch8": 5,
+    "singles_ch10": 71480,
+    "coinc_ch10": 6,
+    "singles_ch12": 71487,
+    "coinc_ch12": 9,
+    "singles_ch14": 71352,
+    "coinc_ch14": 76,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02922000000035
+   },
+   {
+    "timestamp": "2026-11-22T21:32:17.176404",
+    "herald": 650012,
+    "singles_ch4": 71714,
+    "coinc_ch4": 47,
+    "singles_ch6": 72084,
+    "coinc_ch6": 10,
+    "singles_ch8": 72055,
+    "coinc_ch8": 8,
+    "singles_ch10": 72059,
+    "coinc_ch10": 6,
+    "singles_ch12": 72066,
+    "coinc_ch12": 7,
+    "singles_ch14": 71950,
+    "coinc_ch14": 67,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028981100000237
+   },
+   {
+    "timestamp": "2026-11-22T21:32:22.204356",
+    "herald": 650402,
+    "singles_ch4": 71718,
+    "coinc_ch4": 48,
+    "singles_ch6": 72138,
+    "coinc_ch6": 15,
+    "singles_ch8": 72105,
+    "coinc_ch8": 8,
+    "singles_ch10": 72110,
+    "coinc_ch10": 5,
+    "singles_ch12": 72121,
+    "coinc_ch12": 8,
+    "singles_ch14": 71980,
+    "coinc_ch14": 75,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0276450000001205
+   },
+   {
+    "timestamp": "2026-11-22T21:32:27.233958",
+    "herald": 650907,
+    "singles_ch4": 71354,
+    "coinc_ch4": 39,
+    "singles_ch6": 71719,
+    "coinc_ch6": 11,
+    "singles_ch8": 71688,
+    "coinc_ch8": 5,
+    "singles_ch10": 71692,
+    "coinc_ch10": 4,
+    "singles_ch12": 71692,
+    "coinc_ch12": 15,
+    "singles_ch14": 71578,
+    "coinc_ch14": 74,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029403000000457
+   },
+   {
+    "timestamp": "2026-11-22T21:32:32.263191",
+    "herald": 649985,
+    "singles_ch4": 71930,
+    "coinc_ch4": 39,
+    "singles_ch6": 72281,
+    "coinc_ch6": 9,
+    "singles_ch8": 72239,
+    "coinc_ch8": 8,
+    "singles_ch10": 72245,
+    "coinc_ch10": 7,
+    "singles_ch12": 72256,
+    "coinc_ch12": 10,
+    "singles_ch14": 72121,
+    "coinc_ch14": 62,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0289818999999625
+   },
+   {
+    "timestamp": "2026-11-22T21:32:37.292067",
+    "herald": 649568,
+    "singles_ch4": 71305,
+    "coinc_ch4": 44,
+    "singles_ch6": 71699,
+    "coinc_ch6": 8,
+    "singles_ch8": 71663,
+    "coinc_ch8": 9,
+    "singles_ch10": 71670,
+    "coinc_ch10": 9,
+    "singles_ch12": 71674,
+    "coinc_ch12": 4,
+    "singles_ch14": 71530,
+    "coinc_ch14": 59,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028566999999384
+   },
+   {
+    "timestamp": "2026-11-22T21:32:42.320681",
+    "herald": 649112,
+    "singles_ch4": 71551,
+    "coinc_ch4": 48,
+    "singles_ch6": 71953,
+    "coinc_ch6": 13,
+    "singles_ch8": 71925,
+    "coinc_ch8": 3,
+    "singles_ch10": 71926,
+    "coinc_ch10": 3,
+    "singles_ch12": 71930,
+    "coinc_ch12": 13,
+    "singles_ch14": 71781,
+    "coinc_ch14": 85,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028249599999981
+   },
+   {
+    "timestamp": "2026-11-22T21:32:47.349080",
+    "herald": 650971,
+    "singles_ch4": 72119,
+    "coinc_ch4": 56,
+    "singles_ch6": 72504,
+    "coinc_ch6": 16,
+    "singles_ch8": 72464,
+    "coinc_ch8": 5,
+    "singles_ch10": 72466,
+    "coinc_ch10": 17,
+    "singles_ch12": 72476,
+    "coinc_ch12": 9,
+    "singles_ch14": 72344,
+    "coinc_ch14": 92,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028129100000115
+   },
+   {
+    "timestamp": "2026-11-22T21:32:52.377642",
+    "herald": 650664,
+    "singles_ch4": 71821,
+    "coinc_ch4": 45,
+    "singles_ch6": 72211,
+    "coinc_ch6": 10,
+    "singles_ch8": 72183,
+    "coinc_ch8": 10,
+    "singles_ch10": 72187,
+    "coinc_ch10": 11,
+    "singles_ch12": 72194,
+    "coinc_ch12": 8,
+    "singles_ch14": 72067,
+    "coinc_ch14": 74,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02829920000022
+   }
+  ]
+ },
+ "loss_calibration": {
+  "file": "20261122_212942_loss_calibration.json",
+  "stages": {
+   "source_dump": {
+    "mean_hz": 33748.15539516051,
+    "std_hz": 0.0
+   },
+   "source": {
+    "mean_hz": 42411.47986058565,
+    "std_hz": 0.0
+   },
+   "ch2": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "ch4": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "dump": {
+    "mean_hz": 7599.8711673077205,
+    "std_hz": 46.201803250903005
+   },
+   "input": {
+    "mean_hz": 26456.400180766504,
+    "std_hz": 87.86725619670804
+   },
+   "straight_dump": {
+    "mean_hz": 15521.852635494266,
+    "std_hz": 51.45784401535173
+   },
+   "ch5050_exit": {
+    "mean_hz": 4357.036222755327,
+    "std_hz": 26.8546081870267
+   },
+   "ch5050_loop": {
+    "mean_hz": 672.9986571594171,
+    "std_hz": 18.16928718287644
+   },
+   "fifty_fifty_all_channels": {
+    "4": {
+     "mean_hz": 9304.884772922365,
+     "std_hz": 35.864493059759056
+    },
+    "6": {
+     "mean_hz": 1852.9846836705112,
+     "std_hz": 19.72802906808821
+    },
+    "8": {
+     "mean_hz": 326.32610900773847,
+     "std_hz": 6.404164369712743
+    },
+    "10": {
+     "mean_hz": 54.647791568942594,
+     "std_hz": 3.816076799532704
+    },
+    "12": {
+     "mean_hz": 10.728747855125484,
+     "std_hz": 1.1768363781606108
+    },
+    "14": {
+     "mean_hz": 12.85663502093109,
+     "std_hz": 1.4366238279722694
+    }
+   },
+   "zero_loop_output": {
+    "mean_hz": 19164.071054048225,
+    "std_hz": 57.139121729720905
+   },
+   "one_loop": {
+    "mean_hz": 5995.407023788431,
+    "std_hz": 32.39899370278556
+   },
+   "thirty_seventy_all_channels": {
+    "4": {
+     "mean_hz": 5504.548453477767,
+     "std_hz": 33.87527607922471
+    },
+    "6": {
+     "mean_hz": 1435.597684703025,
+     "std_hz": 11.983138707385036
+    },
+    "8": {
+     "mean_hz": 344.979665895485,
+     "std_hz": 9.046952117118524
+    },
+    "10": {
+     "mean_hz": 65.21550077631632,
+     "std_hz": 3.562721730012681
+    },
+    "12": {
+     "mean_hz": 12.180050447646703,
+     "std_hz": 1.7500953691246615
+    },
+    "14": {
+     "mean_hz": 7.417456813581126,
+     "std_hz": 1.24483950744589
+    }
+   }
+  },
+  "losses": {
+   "loss_per_loop_pass": 0.3128462113754248,
+   "loss_per_loop_pass_err": 0.00043175425222376283,
+   "loss_per_loop_pass_5050": 0.3599701424504834,
+   "loss_per_loop_pass_5050_err": 0.010032127571140817,
+   "loss_per_loop_pass_split30": 0.35206133466135836,
+   "loss_per_loop_pass_split30_err": 0.028644755290403938
+  }
+ },
+ "angles": [
+  {
+   "setting": "unitary",
+   "HWP_IN_2": 157.58658,
+   "QWP_IN_2": 73.34736000000001,
+   "HWP_OUT_2": 162.49798,
+   "QWP_OUT_2": 282.90654,
+   "HWP_TOM_1": 238.97566999999998,
+   "QWP_TOM_1": 166.89522,
+   "HWP_1": 89.96379999999999,
+   "QWP_1": 89.97035999999997,
+   "HWP_12": 142.53112,
+   "QWP_12": 254.78999
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 104.29463000000001,
+   "QWP_IN": 131.67889
+  }
+ ]
+}

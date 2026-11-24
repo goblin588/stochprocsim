@@ -1,0 +1,78 @@
+{
+ "started_at": "2026-11-18T19:42:06.342570",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-18T19:42:06.342582",
+   "status": "ok",
+   "elapsed_s": 348.5076570000092,
+   "finished_at": "2026-11-18T19:47:54.851873"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-18T19:47:54.853369",
+   "status": "ok",
+   "elapsed_s": 118.46045639997465,
+   "finished_at": "2026-11-18T19:49:53.331055"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-18T19:49:53.331619",
+   "status": "ok",
+   "elapsed_s": 820.9049350999994,
+   "finished_at": "2026-11-18T20:03:34.261588"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-18T20:03:34.262616",
+   "status": "ok",
+   "elapsed_s": 816.3731759999937,
+   "finished_at": "2026-11-18T20:17:10.656300"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-18T20:17:10.657104",
+   "status": "ok",
+   "elapsed_s": 473.18092929999693,
+   "finished_at": "2026-11-18T20:25:03.891116"
+  }
+ ],
+ "finished_at": "2026-11-18T20:25:03.892510",
+ "ok": 5,
+ "failed": 0
+}

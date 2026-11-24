@@ -1,0 +1,1200 @@
+{
+ "N": "4",
+ "label": "all",
+ "delays_ns": {
+  "2": 2973.17,
+  "3": 3841,
+  "4": 2544.045,
+  "6": 2110.625,
+  "7": 1221.5,
+  "8": 1677.875,
+  "10": 1241.75,
+  "12": 809.75
+ },
+ "thresholds_v": {
+  "3": 0.6,
+  "2": 0.4,
+  "4": 0.4,
+  "6": 0.4,
+  "8": 0.4,
+  "10": 0.4,
+  "12": 0.4,
+  "7": 0.2
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "4542919",
+ "saved_at": "2026-08-22T20:49:14.081386",
+ "noise_calibration": {
+  "counts": {
+   "herald": 1020964,
+   "singles_ch2": 107861,
+   "coinc_ch2": 205,
+   "singles_ch4": 107861,
+   "coinc_ch4": 24,
+   "singles_ch6": 107861,
+   "coinc_ch6": 8,
+   "singles_ch8": 107861,
+   "coinc_ch8": 14,
+   "singles_ch10": 107861,
+   "coinc_ch10": 11,
+   "singles_ch12": 107861,
+   "coinc_ch12": 16,
+   "singles_ch7": 223425,
+   "coinc_ch7": 131,
+   "int_time": 10.027724800005672
+  },
+  "offset_ns": 15.0,
+  "background_rate_hz": {
+   "2": 20.44332130054906,
+   "4": 2.393364444942329,
+   "6": 0.7977881483141096,
+   "8": 1.396129259549692,
+   "10": 1.0969587039319006,
+   "12": 1.5955762966282192,
+   "7": 13.063780928643546
+  },
+  "duration_s": 10.0,
+  "saved_at": "2026-08-22T18:09:34.820130",
+  "git_commit": "4542919",
+  "file": "20260822_180934_noise_calibration.json"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 10228026,
+  "singles_ch2": 1084505,
+  "coinc_ch2": 148,
+  "singles_ch4": 1084505,
+  "coinc_ch4": 77,
+  "singles_ch6": 1084505,
+  "coinc_ch6": 103,
+  "singles_ch8": 1084505,
+  "coinc_ch8": 116,
+  "singles_ch10": 1084505,
+  "coinc_ch10": 119,
+  "singles_ch12": 1084505,
+  "coinc_ch12": 141,
+  "singles_ch7": 2235521,
+  "coinc_ch7": 1485,
+  "int_time": 100.56574730000284,
+  "bins": [
+   {
+    "herald": 513157,
+    "singles_ch2": 54407,
+    "coinc_ch2": 7,
+    "singles_ch4": 54407,
+    "coinc_ch4": 4,
+    "singles_ch6": 54407,
+    "coinc_ch6": 2,
+    "singles_ch8": 54407,
+    "coinc_ch8": 10,
+    "singles_ch10": 54407,
+    "coinc_ch10": 7,
+    "singles_ch12": 54407,
+    "coinc_ch12": 5,
+    "singles_ch7": 112119,
+    "coinc_ch7": 71,
+    "int_time": 5.028973099993891
+   },
+   {
+    "herald": 512017,
+    "singles_ch2": 54690,
+    "coinc_ch2": 7,
+    "singles_ch4": 54690,
+    "coinc_ch4": 5,
+    "singles_ch6": 54690,
+    "coinc_ch6": 5,
+    "singles_ch8": 54690,
+    "coinc_ch8": 3,
+    "singles_ch10": 54690,
+    "coinc_ch10": 2,
+    "singles_ch12": 54690,
+    "coinc_ch12": 9,
+    "singles_ch7": 111363,
+    "coinc_ch7": 80,
+    "int_time": 5.027501800010214
+   },
+   {
+    "herald": 510661,
+    "singles_ch2": 54515,
+    "coinc_ch2": 10,
+    "singles_ch4": 54515,
+    "coinc_ch4": 0,
+    "singles_ch6": 54515,
+    "coinc_ch6": 4,
+    "singles_ch8": 54515,
+    "coinc_ch8": 7,
+    "singles_ch10": 54515,
+    "coinc_ch10": 2,
+    "singles_ch12": 54515,
+    "coinc_ch12": 7,
+    "singles_ch7": 111869,
+    "coinc_ch7": 74,
+    "int_time": 5.029796700007864
+   },
+   {
+    "herald": 511404,
+    "singles_ch2": 54396,
+    "coinc_ch2": 7,
+    "singles_ch4": 54396,
+    "coinc_ch4": 4,
+    "singles_ch6": 54396,
+    "coinc_ch6": 8,
+    "singles_ch8": 54396,
+    "coinc_ch8": 1,
+    "singles_ch10": 54396,
+    "coinc_ch10": 9,
+    "singles_ch12": 54396,
+    "coinc_ch12": 13,
+    "singles_ch7": 111372,
+    "coinc_ch7": 72,
+    "int_time": 5.027302000002237
+   },
+   {
+    "herald": 513497,
+    "singles_ch2": 54456,
+    "coinc_ch2": 3,
+    "singles_ch4": 54456,
+    "coinc_ch4": 6,
+    "singles_ch6": 54456,
+    "coinc_ch6": 7,
+    "singles_ch8": 54456,
+    "coinc_ch8": 4,
+    "singles_ch10": 54456,
+    "coinc_ch10": 9,
+    "singles_ch12": 54456,
+    "coinc_ch12": 4,
+    "singles_ch7": 111787,
+    "coinc_ch7": 82,
+    "int_time": 5.028070200001821
+   },
+   {
+    "herald": 512332,
+    "singles_ch2": 53544,
+    "coinc_ch2": 9,
+    "singles_ch4": 53544,
+    "coinc_ch4": 7,
+    "singles_ch6": 53544,
+    "coinc_ch6": 6,
+    "singles_ch8": 53544,
+    "coinc_ch8": 8,
+    "singles_ch10": 53544,
+    "coinc_ch10": 4,
+    "singles_ch12": 53544,
+    "coinc_ch12": 7,
+    "singles_ch7": 111636,
+    "coinc_ch7": 70,
+    "int_time": 5.026623099998687
+   },
+   {
+    "herald": 511223,
+    "singles_ch2": 53919,
+    "coinc_ch2": 8,
+    "singles_ch4": 53919,
+    "coinc_ch4": 1,
+    "singles_ch6": 53919,
+    "coinc_ch6": 3,
+    "singles_ch8": 53920,
+    "coinc_ch8": 7,
+    "singles_ch10": 53920,
+    "coinc_ch10": 4,
+    "singles_ch12": 53920,
+    "coinc_ch12": 5,
+    "singles_ch7": 111689,
+    "coinc_ch7": 84,
+    "int_time": 5.029200799996033
+   },
+   {
+    "herald": 511413,
+    "singles_ch2": 53855,
+    "coinc_ch2": 12,
+    "singles_ch4": 53855,
+    "coinc_ch4": 3,
+    "singles_ch6": 53855,
+    "coinc_ch6": 5,
+    "singles_ch8": 53854,
+    "coinc_ch8": 6,
+    "singles_ch10": 53854,
+    "coinc_ch10": 3,
+    "singles_ch12": 53854,
+    "coinc_ch12": 4,
+    "singles_ch7": 111927,
+    "coinc_ch7": 73,
+    "int_time": 5.029446100001223
+   },
+   {
+    "herald": 511398,
+    "singles_ch2": 54253,
+    "coinc_ch2": 6,
+    "singles_ch4": 54253,
+    "coinc_ch4": 5,
+    "singles_ch6": 54253,
+    "coinc_ch6": 4,
+    "singles_ch8": 54253,
+    "coinc_ch8": 7,
+    "singles_ch10": 54253,
+    "coinc_ch10": 5,
+    "singles_ch12": 54253,
+    "coinc_ch12": 4,
+    "singles_ch7": 111430,
+    "coinc_ch7": 82,
+    "int_time": 5.029094299999997
+   },
+   {
+    "herald": 510659,
+    "singles_ch2": 54142,
+    "coinc_ch2": 6,
+    "singles_ch4": 54142,
+    "coinc_ch4": 6,
+    "singles_ch6": 54142,
+    "coinc_ch6": 5,
+    "singles_ch8": 54142,
+    "coinc_ch8": 4,
+    "singles_ch10": 54142,
+    "coinc_ch10": 5,
+    "singles_ch12": 54142,
+    "coinc_ch12": 6,
+    "singles_ch7": 111429,
+    "coinc_ch7": 64,
+    "int_time": 5.027256899993517
+   },
+   {
+    "herald": 510285,
+    "singles_ch2": 54321,
+    "coinc_ch2": 10,
+    "singles_ch4": 54321,
+    "coinc_ch4": 1,
+    "singles_ch6": 54321,
+    "coinc_ch6": 2,
+    "singles_ch8": 54321,
+    "coinc_ch8": 8,
+    "singles_ch10": 54321,
+    "coinc_ch10": 6,
+    "singles_ch12": 54321,
+    "coinc_ch12": 3,
+    "singles_ch7": 112089,
+    "coinc_ch7": 66,
+    "int_time": 5.029569700011052
+   },
+   {
+    "herald": 510749,
+    "singles_ch2": 54103,
+    "coinc_ch2": 8,
+    "singles_ch4": 54103,
+    "coinc_ch4": 4,
+    "singles_ch6": 54103,
+    "coinc_ch6": 9,
+    "singles_ch8": 54103,
+    "coinc_ch8": 7,
+    "singles_ch10": 54103,
+    "coinc_ch10": 7,
+    "singles_ch12": 54103,
+    "coinc_ch12": 5,
+    "singles_ch7": 111873,
+    "coinc_ch7": 65,
+    "int_time": 5.02907909998612
+   },
+   {
+    "herald": 509978,
+    "singles_ch2": 54237,
+    "coinc_ch2": 5,
+    "singles_ch4": 54237,
+    "coinc_ch4": 3,
+    "singles_ch6": 54237,
+    "coinc_ch6": 12,
+    "singles_ch8": 54237,
+    "coinc_ch8": 4,
+    "singles_ch10": 54237,
+    "coinc_ch10": 5,
+    "singles_ch12": 54237,
+    "coinc_ch12": 9,
+    "singles_ch7": 111890,
+    "coinc_ch7": 63,
+    "int_time": 5.02763289998984
+   },
+   {
+    "herald": 511706,
+    "singles_ch2": 54189,
+    "coinc_ch2": 9,
+    "singles_ch4": 54189,
+    "coinc_ch4": 2,
+    "singles_ch6": 54189,
+    "coinc_ch6": 9,
+    "singles_ch8": 54189,
+    "coinc_ch8": 4,
+    "singles_ch10": 54189,
+    "coinc_ch10": 9,
+    "singles_ch12": 54189,
+    "coinc_ch12": 5,
+    "singles_ch7": 111819,
+    "coinc_ch7": 83,
+    "int_time": 5.029026499993051
+   },
+   {
+    "herald": 511635,
+    "singles_ch2": 54423,
+    "coinc_ch2": 5,
+    "singles_ch4": 54423,
+    "coinc_ch4": 4,
+    "singles_ch6": 54423,
+    "coinc_ch6": 0,
+    "singles_ch8": 54423,
+    "coinc_ch8": 6,
+    "singles_ch10": 54423,
+    "coinc_ch10": 7,
+    "singles_ch12": 54423,
+    "coinc_ch12": 7,
+    "singles_ch7": 111622,
+    "coinc_ch7": 78,
+    "int_time": 5.029280000002473
+   },
+   {
+    "herald": 511108,
+    "singles_ch2": 54173,
+    "coinc_ch2": 7,
+    "singles_ch4": 54173,
+    "coinc_ch4": 7,
+    "singles_ch6": 54173,
+    "coinc_ch6": 6,
+    "singles_ch8": 54173,
+    "coinc_ch8": 5,
+    "singles_ch10": 54173,
+    "coinc_ch10": 4,
+    "singles_ch12": 54173,
+    "coinc_ch12": 13,
+    "singles_ch7": 112170,
+    "coinc_ch7": 72,
+    "int_time": 5.026815699995495
+   },
+   {
+    "herald": 511316,
+    "singles_ch2": 54447,
+    "coinc_ch2": 10,
+    "singles_ch4": 54447,
+    "coinc_ch4": 2,
+    "singles_ch6": 54447,
+    "coinc_ch6": 5,
+    "singles_ch8": 54447,
+    "coinc_ch8": 7,
+    "singles_ch10": 54447,
+    "coinc_ch10": 9,
+    "singles_ch12": 54447,
+    "coinc_ch12": 10,
+    "singles_ch7": 112277,
+    "coinc_ch7": 76,
+    "int_time": 5.027071400007117
+   },
+   {
+    "herald": 511292,
+    "singles_ch2": 54232,
+    "coinc_ch2": 7,
+    "singles_ch4": 54232,
+    "coinc_ch4": 7,
+    "singles_ch6": 54232,
+    "coinc_ch6": 5,
+    "singles_ch8": 54232,
+    "coinc_ch8": 3,
+    "singles_ch10": 54232,
+    "coinc_ch10": 8,
+    "singles_ch12": 54232,
+    "coinc_ch12": 6,
+    "singles_ch7": 111632,
+    "coinc_ch7": 73,
+    "int_time": 5.027457300006063
+   },
+   {
+    "herald": 511417,
+    "singles_ch2": 54017,
+    "coinc_ch2": 9,
+    "singles_ch4": 54017,
+    "coinc_ch4": 3,
+    "singles_ch6": 54017,
+    "coinc_ch6": 2,
+    "singles_ch8": 54017,
+    "coinc_ch8": 10,
+    "singles_ch10": 54017,
+    "coinc_ch10": 6,
+    "singles_ch12": 54017,
+    "coinc_ch12": 11,
+    "singles_ch7": 111748,
+    "coinc_ch7": 77,
+    "int_time": 5.02801829999953
+   },
+   {
+    "herald": 510779,
+    "singles_ch2": 54186,
+    "coinc_ch2": 3,
+    "singles_ch4": 54186,
+    "coinc_ch4": 3,
+    "singles_ch6": 54186,
+    "coinc_ch6": 4,
+    "singles_ch8": 54186,
+    "coinc_ch8": 5,
+    "singles_ch10": 54186,
+    "coinc_ch10": 8,
+    "singles_ch12": 54186,
+    "coinc_ch12": 8,
+    "singles_ch7": 111780,
+    "coinc_ch7": 80,
+    "int_time": 5.028531400006614
+   }
+  ]
+ },
+ "loss_calibration": {
+  "stages": {
+   "source_dump": {
+    "ch": 7,
+    "delay_ns": 25.0,
+    "counts": {
+     "herald": 2887582,
+     "singles_ch7": 2748001,
+     "coinc_ch7": 1013398,
+     "int_time": 30.028248600079678
+    },
+    "background_hz": 114.88996648195364,
+    "background_point": {
+     "offset_ns": 15.0,
+     "delay_ns": 40.0,
+     "coinc": 233,
+     "herald_singles": 194307,
+     "ch_singles": 185313,
+     "int_time": 2.0280273999087512,
+     "rate_hz": 114.88996648195364
+    },
+    "saved_at": "2026-08-15T15:45:35.837779"
+   },
+   "source": {
+    "ch": 2,
+    "delay_ns": 8.0,
+    "counts": {
+     "herald": 2883097,
+     "singles_ch2": 3540012,
+     "coinc_ch2": 1273553,
+     "int_time": 30.02849709999282
+    },
+    "background_hz": 145.00132350574515,
+    "background_point": {
+     "offset_ns": 15.0,
+     "delay_ns": 23.0,
+     "coinc": 294,
+     "herald_singles": 194222,
+     "ch_singles": 238185,
+     "int_time": 2.0275677000172436,
+     "rate_hz": 145.00132350574515
+    },
+    "saved_at": "2026-08-15T16:52:06.743259"
+   },
+   "ch2": {
+    "ch": 2,
+    "delay_ns": 2973.67,
+    "counts": {
+     "herald": 10395554,
+     "singles_ch2": 2461526,
+     "coinc_ch2": 1530519,
+     "int_time": 100.542566300006,
+     "bins": [
+      {
+       "herald": 519785,
+       "singles_ch2": 123109,
+       "coinc_ch2": 76827,
+       "int_time": 5.02681450000091
+      },
+      {
+       "herald": 519337,
+       "singles_ch2": 123466,
+       "coinc_ch2": 76925,
+       "int_time": 5.026213699995424
+      },
+      {
+       "herald": 520335,
+       "singles_ch2": 122448,
+       "coinc_ch2": 76468,
+       "int_time": 5.026869500012253
+      },
+      {
+       "herald": 519159,
+       "singles_ch2": 123034,
+       "coinc_ch2": 76241,
+       "int_time": 5.0272491999930935
+      },
+      {
+       "herald": 520145,
+       "singles_ch2": 123171,
+       "coinc_ch2": 76622,
+       "int_time": 5.026777999999467
+      },
+      {
+       "herald": 518951,
+       "singles_ch2": 123220,
+       "coinc_ch2": 76434,
+       "int_time": 5.02768769999966
+      },
+      {
+       "herald": 519532,
+       "singles_ch2": 123242,
+       "coinc_ch2": 76321,
+       "int_time": 5.028103799995733
+      },
+      {
+       "herald": 519034,
+       "singles_ch2": 123021,
+       "coinc_ch2": 76036,
+       "int_time": 5.027387299996917
+      },
+      {
+       "herald": 519317,
+       "singles_ch2": 122995,
+       "coinc_ch2": 75993,
+       "int_time": 5.026910899992799
+      },
+      {
+       "herald": 520315,
+       "singles_ch2": 123310,
+       "coinc_ch2": 76626,
+       "int_time": 5.02694780001184
+      },
+      {
+       "herald": 519877,
+       "singles_ch2": 122963,
+       "coinc_ch2": 76484,
+       "int_time": 5.026251899995259
+      },
+      {
+       "herald": 519388,
+       "singles_ch2": 122785,
+       "coinc_ch2": 76791,
+       "int_time": 5.027390300005209
+      },
+      {
+       "herald": 519671,
+       "singles_ch2": 122979,
+       "coinc_ch2": 76405,
+       "int_time": 5.026795500001754
+      },
+      {
+       "herald": 518972,
+       "singles_ch2": 122783,
+       "coinc_ch2": 76494,
+       "int_time": 5.026945699995849
+      },
+      {
+       "herald": 520998,
+       "singles_ch2": 123496,
+       "coinc_ch2": 77226,
+       "int_time": 5.027850099999341
+      },
+      {
+       "herald": 520467,
+       "singles_ch2": 123070,
+       "coinc_ch2": 76439,
+       "int_time": 5.026085600009537
+      },
+      {
+       "herald": 518825,
+       "singles_ch2": 122469,
+       "coinc_ch2": 76185,
+       "int_time": 5.026961499999743
+      },
+      {
+       "herald": 520897,
+       "singles_ch2": 123460,
+       "coinc_ch2": 76977,
+       "int_time": 5.02779730000475
+      },
+      {
+       "herald": 520738,
+       "singles_ch2": 123670,
+       "coinc_ch2": 76589,
+       "int_time": 5.027828999998746
+      },
+      {
+       "herald": 519811,
+       "singles_ch2": 122835,
+       "coinc_ch2": 76436,
+       "int_time": 5.0276969999977155
+      }
+     ]
+    },
+    "saved_at": "2026-08-22T12:36:00.763632"
+   },
+   "ch4": {
+    "ch": 4,
+    "delay_ns": 2544.545,
+    "counts": {
+     "herald": 10417786,
+     "singles_ch4": 1158798,
+     "coinc_ch4": 672392,
+     "int_time": 100.54262649999873,
+     "bins": [
+      {
+       "herald": 520850,
+       "singles_ch4": 57588,
+       "coinc_ch4": 33609,
+       "int_time": 5.027367599992431
+      },
+      {
+       "herald": 522216,
+       "singles_ch4": 58146,
+       "coinc_ch4": 33685,
+       "int_time": 5.028109200007748
+      },
+      {
+       "herald": 521636,
+       "singles_ch4": 57932,
+       "coinc_ch4": 33708,
+       "int_time": 5.027560700007598
+      },
+      {
+       "herald": 521118,
+       "singles_ch4": 57616,
+       "coinc_ch4": 33450,
+       "int_time": 5.0277152999915415
+      },
+      {
+       "herald": 520856,
+       "singles_ch4": 57966,
+       "coinc_ch4": 33832,
+       "int_time": 5.027460199999041
+      },
+      {
+       "herald": 520998,
+       "singles_ch4": 58061,
+       "coinc_ch4": 33599,
+       "int_time": 5.02650249999715
+      },
+      {
+       "herald": 520948,
+       "singles_ch4": 57836,
+       "coinc_ch4": 33444,
+       "int_time": 5.026593300004606
+      },
+      {
+       "herald": 520395,
+       "singles_ch4": 57776,
+       "coinc_ch4": 33530,
+       "int_time": 5.02693310000177
+      },
+      {
+       "herald": 520452,
+       "singles_ch4": 57966,
+       "coinc_ch4": 33741,
+       "int_time": 5.028099600007408
+      },
+      {
+       "herald": 521680,
+       "singles_ch4": 57939,
+       "coinc_ch4": 33565,
+       "int_time": 5.02647579999757
+      },
+      {
+       "herald": 522789,
+       "singles_ch4": 58117,
+       "coinc_ch4": 33872,
+       "int_time": 5.0269873999932315
+      },
+      {
+       "herald": 519489,
+       "singles_ch4": 58254,
+       "coinc_ch4": 33779,
+       "int_time": 5.026849299989408
+      },
+      {
+       "herald": 520857,
+       "singles_ch4": 58056,
+       "coinc_ch4": 33760,
+       "int_time": 5.027342300003511
+      },
+      {
+       "herald": 520842,
+       "singles_ch4": 57836,
+       "coinc_ch4": 33363,
+       "int_time": 5.027187400002731
+      },
+      {
+       "herald": 520484,
+       "singles_ch4": 57631,
+       "coinc_ch4": 33430,
+       "int_time": 5.026627999992343
+      },
+      {
+       "herald": 521382,
+       "singles_ch4": 57887,
+       "coinc_ch4": 33348,
+       "int_time": 5.027307199998177
+      },
+      {
+       "herald": 519914,
+       "singles_ch4": 57932,
+       "coinc_ch4": 33638,
+       "int_time": 5.027294300001813
+      },
+      {
+       "herald": 520209,
+       "singles_ch4": 58412,
+       "coinc_ch4": 33829,
+       "int_time": 5.0268716999999015
+      },
+      {
+       "herald": 520279,
+       "singles_ch4": 58093,
+       "coinc_ch4": 33695,
+       "int_time": 5.0264010000100825
+      },
+      {
+       "herald": 520392,
+       "singles_ch4": 57754,
+       "coinc_ch4": 33515,
+       "int_time": 5.026940600000671
+      }
+     ]
+    },
+    "saved_at": "2026-08-22T12:33:14.006063"
+   },
+   "dump": {
+    "ch": 7,
+    "delay_ns": 2958.5,
+    "counts": {
+     "herald": 10439557,
+     "singles_ch7": 2177251,
+     "coinc_ch7": 764093,
+     "int_time": 100.54025629996613,
+     "bins": [
+      {
+       "herald": 522246,
+       "singles_ch7": 109232,
+       "coinc_ch7": 38540,
+       "int_time": 5.025691300004837
+      },
+      {
+       "herald": 520614,
+       "singles_ch7": 107875,
+       "coinc_ch7": 37935,
+       "int_time": 5.025881399997161
+      },
+      {
+       "herald": 523106,
+       "singles_ch7": 109653,
+       "coinc_ch7": 38418,
+       "int_time": 5.027524399993126
+      },
+      {
+       "herald": 521500,
+       "singles_ch7": 108659,
+       "coinc_ch7": 38089,
+       "int_time": 5.02693389999331
+      },
+      {
+       "herald": 520671,
+       "singles_ch7": 108638,
+       "coinc_ch7": 37930,
+       "int_time": 5.026539200000116
+      },
+      {
+       "herald": 521681,
+       "singles_ch7": 108822,
+       "coinc_ch7": 38118,
+       "int_time": 5.026771699995152
+      },
+      {
+       "herald": 522158,
+       "singles_ch7": 109504,
+       "coinc_ch7": 38343,
+       "int_time": 5.0267633000039496
+      },
+      {
+       "herald": 521870,
+       "singles_ch7": 109107,
+       "coinc_ch7": 38065,
+       "int_time": 5.026786000002176
+      },
+      {
+       "herald": 522913,
+       "singles_ch7": 109555,
+       "coinc_ch7": 38420,
+       "int_time": 5.028169199998956
+      },
+      {
+       "herald": 521899,
+       "singles_ch7": 108432,
+       "coinc_ch7": 38178,
+       "int_time": 5.027279700007057
+      },
+      {
+       "herald": 521565,
+       "singles_ch7": 108857,
+       "coinc_ch7": 38270,
+       "int_time": 5.026359199997387
+      },
+      {
+       "herald": 520129,
+       "singles_ch7": 108797,
+       "coinc_ch7": 38259,
+       "int_time": 5.027305899988278
+      },
+      {
+       "herald": 523118,
+       "singles_ch7": 108354,
+       "coinc_ch7": 37966,
+       "int_time": 5.026545599990641
+      },
+      {
+       "herald": 522776,
+       "singles_ch7": 108386,
+       "coinc_ch7": 38040,
+       "int_time": 5.0281707999965874
+      },
+      {
+       "herald": 520773,
+       "singles_ch7": 108519,
+       "coinc_ch7": 37985,
+       "int_time": 5.027983299994958
+      },
+      {
+       "herald": 523068,
+       "singles_ch7": 109083,
+       "coinc_ch7": 38224,
+       "int_time": 5.027590300000156
+      },
+      {
+       "herald": 522066,
+       "singles_ch7": 109097,
+       "coinc_ch7": 38083,
+       "int_time": 5.027037600011681
+      },
+      {
+       "herald": 522579,
+       "singles_ch7": 109426,
+       "coinc_ch7": 38790,
+       "int_time": 5.027137199998833
+      },
+      {
+       "herald": 522274,
+       "singles_ch7": 108299,
+       "coinc_ch7": 37980,
+       "int_time": 5.026973699990776
+      },
+      {
+       "herald": 522551,
+       "singles_ch7": 108956,
+       "coinc_ch7": 38460,
+       "int_time": 5.026812600000994
+      }
+     ]
+    },
+    "saved_at": "2026-08-22T13:01:19.257539"
+   },
+   "input": {
+    "ch": 2,
+    "delay_ns": 3391.0,
+    "counts": {
+     "herald": 10009788,
+     "singles_ch2": 7186998,
+     "coinc_ch2": 2659948,
+     "int_time": 100.540825399803,
+     "bins": [
+      {
+       "herald": 501840,
+       "singles_ch2": 359406,
+       "coinc_ch2": 133158,
+       "int_time": 5.026169200195
+      },
+      {
+       "herald": 498991,
+       "singles_ch2": 358509,
+       "coinc_ch2": 132568,
+       "int_time": 5.025689500151202
+      },
+      {
+       "herald": 501033,
+       "singles_ch2": 360299,
+       "coinc_ch2": 133297,
+       "int_time": 5.027360799955204
+      },
+      {
+       "herald": 500364,
+       "singles_ch2": 359008,
+       "coinc_ch2": 133383,
+       "int_time": 5.027306300122291
+      },
+      {
+       "herald": 500049,
+       "singles_ch2": 358979,
+       "coinc_ch2": 133046,
+       "int_time": 5.027987599838525
+      },
+      {
+       "herald": 500029,
+       "singles_ch2": 358985,
+       "coinc_ch2": 132654,
+       "int_time": 5.027307899901643
+      },
+      {
+       "herald": 500897,
+       "singles_ch2": 360744,
+       "coinc_ch2": 133495,
+       "int_time": 5.026955500012264
+      },
+      {
+       "herald": 500090,
+       "singles_ch2": 359479,
+       "coinc_ch2": 132938,
+       "int_time": 5.02733219997026
+      },
+      {
+       "herald": 500707,
+       "singles_ch2": 359278,
+       "coinc_ch2": 132916,
+       "int_time": 5.027618600055575
+      },
+      {
+       "herald": 500955,
+       "singles_ch2": 359519,
+       "coinc_ch2": 133436,
+       "int_time": 5.026652599917725
+      },
+      {
+       "herald": 501003,
+       "singles_ch2": 359533,
+       "coinc_ch2": 133618,
+       "int_time": 5.0261637000367045
+      },
+      {
+       "herald": 500765,
+       "singles_ch2": 359421,
+       "coinc_ch2": 133864,
+       "int_time": 5.026665099896491
+      },
+      {
+       "herald": 500757,
+       "singles_ch2": 359829,
+       "coinc_ch2": 132945,
+       "int_time": 5.02617960004136
+      },
+      {
+       "herald": 499143,
+       "singles_ch2": 358434,
+       "coinc_ch2": 132481,
+       "int_time": 5.0271133000496775
+      },
+      {
+       "herald": 501219,
+       "singles_ch2": 359485,
+       "coinc_ch2": 133085,
+       "int_time": 5.027256599860266
+      },
+      {
+       "herald": 500247,
+       "singles_ch2": 358962,
+       "coinc_ch2": 132884,
+       "int_time": 5.027284099953249
+      },
+      {
+       "herald": 498391,
+       "singles_ch2": 358180,
+       "coinc_ch2": 132053,
+       "int_time": 5.0278407000005245
+      },
+      {
+       "herald": 499906,
+       "singles_ch2": 358640,
+       "coinc_ch2": 132877,
+       "int_time": 5.028125299839303
+      },
+      {
+       "herald": 499705,
+       "singles_ch2": 359872,
+       "coinc_ch2": 132603,
+       "int_time": 5.027139199897647
+      },
+      {
+       "herald": 503697,
+       "singles_ch2": 360436,
+       "coinc_ch2": 132647,
+       "int_time": 5.026677600108087
+      }
+     ]
+    },
+    "saved_at": "2026-08-18T12:32:44.240857"
+   },
+   "straight_dump": {
+    "ch": 7,
+    "delay_ns": 3392.5,
+    "counts": {
+     "herald": 10402941,
+     "singles_ch7": 4083824,
+     "coinc_ch7": 1560523,
+     "int_time": 100.53716700001678,
+     "bins": [
+      {
+       "herald": 520056,
+       "singles_ch7": 204170,
+       "coinc_ch7": 78133,
+       "int_time": 5.026956500005326
+      },
+      {
+       "herald": 520115,
+       "singles_ch7": 204213,
+       "coinc_ch7": 77789,
+       "int_time": 5.026650300002075
+      },
+      {
+       "herald": 519569,
+       "singles_ch7": 203820,
+       "coinc_ch7": 77790,
+       "int_time": 5.026497700004256
+      },
+      {
+       "herald": 520838,
+       "singles_ch7": 204568,
+       "coinc_ch7": 78030,
+       "int_time": 5.026869200009969
+      },
+      {
+       "herald": 520579,
+       "singles_ch7": 204049,
+       "coinc_ch7": 78346,
+       "int_time": 5.026547400004347
+      },
+      {
+       "herald": 519472,
+       "singles_ch7": 204054,
+       "coinc_ch7": 77715,
+       "int_time": 5.0280300000013085
+      },
+      {
+       "herald": 521090,
+       "singles_ch7": 204157,
+       "coinc_ch7": 78084,
+       "int_time": 5.02648169999884
+      },
+      {
+       "herald": 519829,
+       "singles_ch7": 204321,
+       "coinc_ch7": 77972,
+       "int_time": 5.0280918999924324
+      },
+      {
+       "herald": 519714,
+       "singles_ch7": 203963,
+       "coinc_ch7": 77659,
+       "int_time": 5.026983999996446
+      },
+      {
+       "herald": 519864,
+       "singles_ch7": 203794,
+       "coinc_ch7": 77801,
+       "int_time": 5.02674489999481
+      },
+      {
+       "herald": 519479,
+       "singles_ch7": 203526,
+       "coinc_ch7": 77619,
+       "int_time": 5.026831399998628
+      },
+      {
+       "herald": 520856,
+       "singles_ch7": 203825,
+       "coinc_ch7": 77737,
+       "int_time": 5.02683679999609
+      },
+      {
+       "herald": 520403,
+       "singles_ch7": 204757,
+       "coinc_ch7": 78154,
+       "int_time": 5.026150100005907
+      },
+      {
+       "herald": 521550,
+       "singles_ch7": 204127,
+       "coinc_ch7": 78352,
+       "int_time": 5.026688099998864
+      },
+      {
+       "herald": 520059,
+       "singles_ch7": 204468,
+       "coinc_ch7": 78107,
+       "int_time": 5.026775500009535
+      },
+      {
+       "herald": 520456,
+       "singles_ch7": 204573,
+       "coinc_ch7": 78368,
+       "int_time": 5.027505999998539
+      },
+      {
+       "herald": 520011,
+       "singles_ch7": 204605,
+       "coinc_ch7": 78366,
+       "int_time": 5.026165800009039
+      },
+      {
+       "herald": 520033,
+       "singles_ch7": 204246,
+       "coinc_ch7": 78099,
+       "int_time": 5.02659439999843
+      },
+      {
+       "herald": 519065,
+       "singles_ch7": 203612,
+       "coinc_ch7": 78018,
+       "int_time": 5.026282599996193
+      },
+      {
+       "herald": 519903,
+       "singles_ch7": 204976,
+       "coinc_ch7": 78384,
+       "int_time": 5.027482699995744
+      }
+     ]
+    },
+    "saved_at": "2026-08-22T13:09:18.915133"
+   }
+  },
+  "record_n_bins": 20,
+  "record_bin_s": 5.0,
+  "git_commit": "4542919",
+  "saved_at": "2026-08-22T13:09:20.974605",
+  "losses": {
+   "det_eff_setup": 1.0,
+   "det_eff_setup_err": 0.0,
+   "det_eff_dump": 0.7957316157346292,
+   "det_eff_dump_err": 0.0,
+   "loss_input_to_setup": 0.5753842850733523,
+   "loss_input_to_setup_err": 0.0006752192150510093,
+   "loss_per_loop_pass": 0.43932259160630316,
+   "loss_per_loop_pass_err": 0.0006143247948671278,
+   "loss_to_dump": 0.3610013827914798,
+   "loss_to_dump_err": 0.0005591920365440935,
+   "loss_switch_to_dump": 0.4896239737471078,
+   "loss_switch_to_dump_err": 0.0007581128310602016
+  },
+  "coincidence_rates_hz": {
+   "C0": 42411.47986058565,
+   "C0_err": 0.0,
+   "C0d": 33748.15539516051,
+   "C0d_err": 0.0,
+   "C2": 15222.596903624843,
+   "C2_err": 13.831670690695141,
+   "C4": 6687.630722678552,
+   "C4_err": 7.108313826479559,
+   "Cd": 7599.8711673077205,
+   "Cd_err": 10.331037275208988,
+   "Cin": 26456.400180766504,
+   "Cin_err": 19.647715785222882,
+   "Csd": 15521.852635494266,
+   "Csd_err": 11.50632371939072
+  },
+  "file": "20260815_153306_loss_calibration.json"
+ }
+}

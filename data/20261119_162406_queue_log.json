@@ -1,0 +1,25 @@
+{
+ "started_at": "2026-11-19T16:24:06.834193",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     7
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-19T16:24:06.834248",
+   "status": "ok",
+   "elapsed_s": 2062.32075350004,
+   "finished_at": "2026-11-19T16:58:29.162031"
+  }
+ ],
+ "stopped_by": "KeyboardInterrupt"
+}

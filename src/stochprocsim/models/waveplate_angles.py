@@ -142,7 +142,7 @@ U_6_angles_NTU = {
     "Φm2": 3.77,
     "Φm3": 3.74
 }
-
+  
 angs = {
     3: U_3_angles_NTU, 
     4: U_4_angles_NTU, 

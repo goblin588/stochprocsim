@@ -1,0 +1,91 @@
+{
+ "started_at": "2026-11-23T17:41:49.768959",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     7
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-23T17:41:49.768982",
+   "status": "ok",
+   "elapsed_s": 560.3414293000005,
+   "finished_at": "2026-11-23T17:51:10.097369"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T17:51:10.098137",
+   "status": "ok",
+   "elapsed_s": 321.50037020000127,
+   "finished_at": "2026-11-23T17:56:31.611271"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-23T17:56:31.612033",
+   "status": "ok",
+   "elapsed_s": 113.39309130000038,
+   "finished_at": "2026-11-23T17:58:25.020807"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-23T17:58:25.021872",
+   "status": "ok",
+   "elapsed_s": 819.1524754000002,
+   "finished_at": "2026-11-23T18:12:04.174451"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-23T18:12:04.175177",
+   "status": "ok",
+   "elapsed_s": 755.9722959999999,
+   "finished_at": "2026-11-23T18:24:40.174086"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 600.0
+   },
+   "started_at": "2026-11-23T18:24:40.174827",
+   "status": "ok",
+   "elapsed_s": 771.2898195999987,
+   "finished_at": "2026-11-23T18:37:31.480652"
+  }
+ ]
+}

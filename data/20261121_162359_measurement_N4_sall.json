@@ -1,0 +1,738 @@
+{
+ "N": "4",
+ "label": "all",
+ "delays_ns": {
+  "3": 3841,
+  "4": 2968.6259233956107,
+  "6": 2536.5805891797854,
+  "7": 1215.2208333333333,
+  "8": 2101.7067817415696,
+  "10": 1667.8420868347337,
+  "12": 1232.5135467980294,
+  "14": 817.4318181818182
+ },
+ "thresholds_v": {
+  "3": 0.1,
+  "4": 0.05,
+  "6": 0.05,
+  "8": 0.05,
+  "10": 0.05,
+  "12": 0.05,
+  "14": 0.05,
+  "7": 0.1
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "77eb840",
+ "saved_at": "2026-11-21T16:24:00.040834",
+ "noise_calibration": {
+  "counts": {
+   "herald": 7604996,
+   "singles_ch4": 257049,
+   "coinc_ch4": 141,
+   "singles_ch6": 258547,
+   "coinc_ch6": 96,
+   "singles_ch8": 258444,
+   "coinc_ch8": 45,
+   "singles_ch10": 258446,
+   "coinc_ch10": 45,
+   "singles_ch12": 258473,
+   "coinc_ch12": 37,
+   "singles_ch14": 257991,
+   "coinc_ch14": 222,
+   "singles_ch7": 0,
+   "coinc_ch7": 0,
+   "int_time": 60.028652900015004
+  },
+  "offset_ns": 15.0,
+  "background_rate_hz": {
+   "4": 2.3488782970834374,
+   "6": 1.5992362873759576,
+   "8": 0.7496420097074801,
+   "10": 0.7496420097074801,
+   "12": 0.616372319092817,
+   "14": 3.698233914556902,
+   "7": 0.0
+  },
+  "duration_s": 60.0,
+  "saved_at": "2026-11-20T23:20:23.304786",
+  "git_commit": "6817561",
+  "file": "20261120_232023_noise_calibration.json"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 13044939,
+  "singles_ch4": 310548,
+  "coinc_ch4": 203,
+  "singles_ch6": 312243,
+  "coinc_ch6": 157,
+  "singles_ch8": 312099,
+  "coinc_ch8": 81,
+  "singles_ch10": 312081,
+  "coinc_ch10": 67,
+  "singles_ch12": 312118,
+  "coinc_ch12": 58,
+  "singles_ch14": 311558,
+  "coinc_ch14": 132,
+  "singles_ch7": 61012,
+  "coinc_ch7": 14,
+  "int_time": 100.58410500007449,
+  "bins": [
+   {
+    "timestamp": "2026-11-21T09:38:02.838867",
+    "herald": 651651,
+    "singles_ch4": 15936,
+    "coinc_ch4": 7,
+    "singles_ch6": 16022,
+    "coinc_ch6": 6,
+    "singles_ch8": 16013,
+    "coinc_ch8": 4,
+    "singles_ch10": 16012,
+    "coinc_ch10": 1,
+    "singles_ch12": 16014,
+    "coinc_ch12": 2,
+    "singles_ch14": 15989,
+    "coinc_ch14": 4,
+    "singles_ch7": 7452,
+    "coinc_ch7": 0,
+    "int_time": 5.028722500021104
+   },
+   {
+    "timestamp": "2026-11-21T09:38:07.868105",
+    "herald": 651044,
+    "singles_ch4": 15865,
+    "coinc_ch4": 10,
+    "singles_ch6": 15943,
+    "coinc_ch6": 10,
+    "singles_ch8": 15935,
+    "coinc_ch8": 4,
+    "singles_ch10": 15934,
+    "coinc_ch10": 2,
+    "singles_ch12": 15936,
+    "coinc_ch12": 2,
+    "singles_ch14": 15907,
+    "coinc_ch14": 5,
+    "singles_ch7": 7554,
+    "coinc_ch7": 1,
+    "int_time": 5.028951000014786
+   },
+   {
+    "timestamp": "2026-11-21T09:38:12.897437",
+    "herald": 652895,
+    "singles_ch4": 16184,
+    "coinc_ch4": 10,
+    "singles_ch6": 16281,
+    "coinc_ch6": 8,
+    "singles_ch8": 16267,
+    "coinc_ch8": 6,
+    "singles_ch10": 16267,
+    "coinc_ch10": 1,
+    "singles_ch12": 16275,
+    "coinc_ch12": 2,
+    "singles_ch14": 16245,
+    "coinc_ch14": 8,
+    "singles_ch7": 7361,
+    "coinc_ch7": 0,
+    "int_time": 5.029067499970552
+   },
+   {
+    "timestamp": "2026-11-21T09:38:17.928115",
+    "herald": 653059,
+    "singles_ch4": 15964,
+    "coinc_ch4": 6,
+    "singles_ch6": 16049,
+    "coinc_ch6": 9,
+    "singles_ch8": 16037,
+    "coinc_ch8": 1,
+    "singles_ch10": 16038,
+    "coinc_ch10": 2,
+    "singles_ch12": 16040,
+    "coinc_ch12": 3,
+    "singles_ch14": 16019,
+    "coinc_ch14": 5,
+    "singles_ch7": 7475,
+    "coinc_ch7": 1,
+    "int_time": 5.030305000022054
+   },
+   {
+    "timestamp": "2026-11-21T09:38:22.958701",
+    "herald": 652030,
+    "singles_ch4": 15912,
+    "coinc_ch4": 9,
+    "singles_ch6": 16004,
+    "coinc_ch6": 8,
+    "singles_ch8": 15994,
+    "coinc_ch8": 5,
+    "singles_ch10": 15996,
+    "coinc_ch10": 3,
+    "singles_ch12": 15999,
+    "coinc_ch12": 1,
+    "singles_ch14": 15964,
+    "coinc_ch14": 3,
+    "singles_ch7": 7350,
+    "coinc_ch7": 6,
+    "int_time": 5.03024930000538
+   },
+   {
+    "timestamp": "2026-11-21T09:38:27.989505",
+    "herald": 652834,
+    "singles_ch4": 15853,
+    "coinc_ch4": 10,
+    "singles_ch6": 15939,
+    "coinc_ch6": 8,
+    "singles_ch8": 15930,
+    "coinc_ch8": 3,
+    "singles_ch10": 15931,
+    "coinc_ch10": 2,
+    "singles_ch12": 15933,
+    "coinc_ch12": 1,
+    "singles_ch14": 15901,
+    "coinc_ch14": 3,
+    "singles_ch7": 7470,
+    "coinc_ch7": 1,
+    "int_time": 5.030445599986706
+   },
+   {
+    "timestamp": "2026-11-21T09:38:33.018263",
+    "herald": 651827,
+    "singles_ch4": 15702,
+    "coinc_ch4": 12,
+    "singles_ch6": 15776,
+    "coinc_ch6": 6,
+    "singles_ch8": 15772,
+    "coinc_ch8": 3,
+    "singles_ch10": 15772,
+    "coinc_ch10": 1,
+    "singles_ch12": 15773,
+    "coinc_ch12": 1,
+    "singles_ch14": 15746,
+    "coinc_ch14": 10,
+    "singles_ch7": 7420,
+    "coinc_ch7": 2,
+    "int_time": 5.028555399971083
+   },
+   {
+    "timestamp": "2026-11-21T09:38:38.047733",
+    "herald": 652042,
+    "singles_ch4": 16064,
+    "coinc_ch4": 7,
+    "singles_ch6": 16155,
+    "coinc_ch6": 9,
+    "singles_ch8": 16144,
+    "coinc_ch8": 1,
+    "singles_ch10": 16144,
+    "coinc_ch10": 2,
+    "singles_ch12": 16148,
+    "coinc_ch12": 0,
+    "singles_ch14": 16109,
+    "coinc_ch14": 13,
+    "singles_ch7": 7491,
+    "coinc_ch7": 0,
+    "int_time": 5.029139199992642
+   },
+   {
+    "timestamp": "2026-11-21T09:38:43.077115",
+    "herald": 652623,
+    "singles_ch4": 16158,
+    "coinc_ch4": 11,
+    "singles_ch6": 16253,
+    "coinc_ch6": 7,
+    "singles_ch8": 16247,
+    "coinc_ch8": 2,
+    "singles_ch10": 16247,
+    "coinc_ch10": 3,
+    "singles_ch12": 16249,
+    "coinc_ch12": 3,
+    "singles_ch14": 16210,
+    "coinc_ch14": 7,
+    "singles_ch7": 1439,
+    "coinc_ch7": 3,
+    "int_time": 5.0290821000235155
+   },
+   {
+    "timestamp": "2026-11-21T09:38:48.107465",
+    "herald": 651146,
+    "singles_ch4": 16046,
+    "coinc_ch4": 10,
+    "singles_ch6": 16132,
+    "coinc_ch6": 2,
+    "singles_ch8": 16130,
+    "coinc_ch8": 4,
+    "singles_ch10": 16129,
+    "coinc_ch10": 2,
+    "singles_ch12": 16132,
+    "coinc_ch12": 0,
+    "singles_ch14": 16097,
+    "coinc_ch14": 13,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.030004800006282
+   },
+   {
+    "timestamp": "2026-11-21T09:38:53.137048",
+    "herald": 653688,
+    "singles_ch4": 16063,
+    "coinc_ch4": 6,
+    "singles_ch6": 16147,
+    "coinc_ch6": 10,
+    "singles_ch8": 16140,
+    "coinc_ch8": 4,
+    "singles_ch10": 16140,
+    "coinc_ch10": 2,
+    "singles_ch12": 16143,
+    "coinc_ch12": 2,
+    "singles_ch14": 16111,
+    "coinc_ch14": 6,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.02921750000678
+   },
+   {
+    "timestamp": "2026-11-21T09:38:58.166501",
+    "herald": 652345,
+    "singles_ch4": 15985,
+    "coinc_ch4": 8,
+    "singles_ch6": 16069,
+    "coinc_ch6": 4,
+    "singles_ch8": 16062,
+    "coinc_ch8": 4,
+    "singles_ch10": 16063,
+    "coinc_ch10": 6,
+    "singles_ch12": 16064,
+    "coinc_ch12": 4,
+    "singles_ch14": 16037,
+    "coinc_ch14": 3,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.0291454999824055
+   },
+   {
+    "timestamp": "2026-11-21T09:39:03.195346",
+    "herald": 652520,
+    "singles_ch4": 16260,
+    "coinc_ch4": 12,
+    "singles_ch6": 16344,
+    "coinc_ch6": 5,
+    "singles_ch8": 16338,
+    "coinc_ch8": 0,
+    "singles_ch10": 16338,
+    "coinc_ch10": 3,
+    "singles_ch12": 16341,
+    "coinc_ch12": 1,
+    "singles_ch14": 16310,
+    "coinc_ch14": 8,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028482800000347
+   },
+   {
+    "timestamp": "2026-11-21T09:39:08.224165",
+    "herald": 651552,
+    "singles_ch4": 16295,
+    "coinc_ch4": 17,
+    "singles_ch6": 16372,
+    "coinc_ch6": 9,
+    "singles_ch8": 16364,
+    "coinc_ch8": 2,
+    "singles_ch10": 16365,
+    "coinc_ch10": 3,
+    "singles_ch12": 16367,
+    "coinc_ch12": 2,
+    "singles_ch14": 16339,
+    "coinc_ch14": 2,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028631400025915
+   },
+   {
+    "timestamp": "2026-11-21T09:39:13.253515",
+    "herald": 653055,
+    "singles_ch4": 15996,
+    "coinc_ch4": 8,
+    "singles_ch6": 16069,
+    "coinc_ch6": 6,
+    "singles_ch8": 16062,
+    "coinc_ch8": 3,
+    "singles_ch10": 16062,
+    "coinc_ch10": 5,
+    "singles_ch12": 16063,
+    "coinc_ch12": 4,
+    "singles_ch14": 16041,
+    "coinc_ch14": 3,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029055099992547
+   },
+   {
+    "timestamp": "2026-11-21T09:39:18.282606",
+    "herald": 652970,
+    "singles_ch4": 15860,
+    "coinc_ch4": 8,
+    "singles_ch6": 15945,
+    "coinc_ch6": 6,
+    "singles_ch8": 15940,
+    "coinc_ch8": 5,
+    "singles_ch10": 15939,
+    "coinc_ch10": 2,
+    "singles_ch12": 15942,
+    "coinc_ch12": 3,
+    "singles_ch14": 15908,
+    "coinc_ch14": 5,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028780100052245
+   },
+   {
+    "timestamp": "2026-11-21T09:39:23.312425",
+    "herald": 651351,
+    "singles_ch4": 15911,
+    "coinc_ch4": 5,
+    "singles_ch6": 16012,
+    "coinc_ch6": 11,
+    "singles_ch8": 16007,
+    "coinc_ch8": 5,
+    "singles_ch10": 16005,
+    "coinc_ch10": 2,
+    "singles_ch12": 16008,
+    "coinc_ch12": 4,
+    "singles_ch14": 15980,
+    "coinc_ch14": 6,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029438300000038
+   },
+   {
+    "timestamp": "2026-11-21T09:39:28.342026",
+    "herald": 651947,
+    "singles_ch4": 15908,
+    "coinc_ch4": 12,
+    "singles_ch6": 16006,
+    "coinc_ch6": 6,
+    "singles_ch8": 15999,
+    "coinc_ch8": 2,
+    "singles_ch10": 16000,
+    "coinc_ch10": 2,
+    "singles_ch12": 16002,
+    "coinc_ch12": 5,
+    "singles_ch14": 15974,
+    "coinc_ch14": 8,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029070299991872
+   },
+   {
+    "timestamp": "2026-11-21T09:39:33.371067",
+    "herald": 652385,
+    "singles_ch4": 16204,
+    "coinc_ch4": 12,
+    "singles_ch6": 16292,
+    "coinc_ch6": 6,
+    "singles_ch8": 16289,
+    "coinc_ch8": 4,
+    "singles_ch10": 16287,
+    "coinc_ch10": 2,
+    "singles_ch12": 16289,
+    "coinc_ch12": 4,
+    "singles_ch14": 16257,
+    "coinc_ch14": 10,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.028742299997248
+   },
+   {
+    "timestamp": "2026-11-21T09:39:38.400413",
+    "herald": 651975,
+    "singles_ch4": 6382,
+    "coinc_ch4": 23,
+    "singles_ch6": 6433,
+    "coinc_ch6": 21,
+    "singles_ch8": 6429,
+    "coinc_ch8": 19,
+    "singles_ch10": 6412,
+    "coinc_ch10": 21,
+    "singles_ch12": 6400,
+    "coinc_ch12": 14,
+    "singles_ch14": 6414,
+    "coinc_ch14": 10,
+    "singles_ch7": 0,
+    "coinc_ch7": 0,
+    "int_time": 5.029019300010987
+   }
+  ]
+ },
+ "loss_calibration": {
+  "file": "20261121_000659_loss_calibration.json",
+  "stages": {
+   "source_dump": {
+    "mean_hz": 33748.15539516051,
+    "std_hz": 0.0
+   },
+   "source": {
+    "mean_hz": 42411.47986058565,
+    "std_hz": 0.0
+   },
+   "ch2": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "ch4": {
+    "mean_hz": 0.0,
+    "std_hz": 0.0
+   },
+   "dump": {
+    "mean_hz": 7599.8711673077205,
+    "std_hz": 46.201803250903005
+   },
+   "input": {
+    "mean_hz": 26456.400180766504,
+    "std_hz": 87.86725619670804
+   },
+   "straight_dump": {
+    "mean_hz": 15521.852635494266,
+    "std_hz": 51.45784401535173
+   },
+   "ch5050_exit": {
+    "mean_hz": 4357.036222755327,
+    "std_hz": 26.8546081870267
+   },
+   "ch5050_loop": {
+    "mean_hz": 672.9986571594171,
+    "std_hz": 18.16928718287644
+   },
+   "fifty_fifty_all_channels": {
+    "4": {
+     "mean_hz": 8997.030755686164,
+     "std_hz": 43.103701684288666
+    },
+    "6": {
+     "mean_hz": 1768.3798678431963,
+     "std_hz": 17.94759281969827
+    },
+    "8": {
+     "mean_hz": 255.81937776842943,
+     "std_hz": 6.859170561441391
+    },
+    "10": {
+     "mean_hz": 53.82639553243507,
+     "std_hz": 2.708164749282863
+    },
+    "12": {
+     "mean_hz": 9.922125372108367,
+     "std_hz": 1.5502667387977842
+    },
+    "14": {
+     "mean_hz": 11.870917713597258,
+     "std_hz": 2.099890556158701
+    }
+   },
+   "zero_loop_output": {
+    "mean_hz": 18577.16307270695,
+    "std_hz": 54.59427885689936
+   },
+   "one_loop": {
+    "mean_hz": 5758.609628961664,
+    "std_hz": 30.724879629342123
+   },
+   "thirty_seventy_all_channels": {
+    "4": {
+     "mean_hz": 5504.548453477767,
+     "std_hz": 33.87527607922471
+    },
+    "6": {
+     "mean_hz": 1435.597684703025,
+     "std_hz": 11.983138707385036
+    },
+    "8": {
+     "mean_hz": 344.979665895485,
+     "std_hz": 9.046952117118524
+    },
+    "10": {
+     "mean_hz": 65.21550077631632,
+     "std_hz": 3.562721730012681
+    },
+    "12": {
+     "mean_hz": 12.180050447646703,
+     "std_hz": 1.7500953691246615
+    },
+    "14": {
+     "mean_hz": 7.417456813581126,
+     "std_hz": 1.24483950744589
+    }
+   }
+  },
+  "losses": {
+   "loss_per_loop_pass": 0.3099832631292371,
+   "loss_per_loop_pass_err": 0.0004222131199516055,
+   "loss_per_loop_pass_5050": 0.35492338208301666,
+   "loss_per_loop_pass_5050_err": 0.017517147204581047,
+   "loss_per_loop_pass_split30": 0.35206133466135836,
+   "loss_per_loop_pass_split30_err": 0.028644755290403938
+  }
+ },
+ "angles": [
+  {
+   "setting": "unitary",
+   "HWP_IN_2": 40.73844000000001,
+   "QWP_IN_2": 0.01751000000001568,
+   "HWP_OUT_2": 334.46392,
+   "QWP_OUT_2": 194.88663,
+   "HWP_TOM_1": 145.67777,
+   "QWP_TOM_1": 257.72471,
+   "HWP_1": 180.10093,
+   "QWP_1": -0.006219999999984793,
+   "HWP_12": 48.44051999999999,
+   "QWP_12": 157.09999
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 290.10775,
+   "QWP_IN": 118.84516
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 104.64583000000002,
+   "QWP_IN": 49.14768
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 292.93739,
+   "QWP_IN": 66.43659
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 303.25254,
+   "QWP_IN": 82.57157
+  },
+  {
+   "setting": "s4",
+   "input_state": 4,
+   "basis": null,
+   "HWP_IN": 46.59804,
+   "QWP_IN": 98.5761
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 290.10775,
+   "QWP_IN": 118.84516
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 104.64583000000002,
+   "QWP_IN": 49.14768
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 292.93739,
+   "QWP_IN": 66.43659
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 303.25254,
+   "QWP_IN": 82.57157
+  },
+  {
+   "setting": "s4",
+   "input_state": 4,
+   "basis": null,
+   "HWP_IN": 46.59804,
+   "QWP_IN": 98.5761
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 290.10775,
+   "QWP_IN": 118.84516
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 104.64583000000002,
+   "QWP_IN": 49.15772
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 292.93739,
+   "QWP_IN": 66.43659
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 303.25254,
+   "QWP_IN": 82.57157
+  },
+  {
+   "setting": "s4",
+   "input_state": 4,
+   "basis": null,
+   "HWP_IN": 46.59804,
+   "QWP_IN": 98.5761
+  },
+  {
+   "setting": "s0",
+   "input_state": 0,
+   "basis": null,
+   "HWP_IN": 290.10775,
+   "QWP_IN": 118.84516
+  },
+  {
+   "setting": "s1",
+   "input_state": 1,
+   "basis": null,
+   "HWP_IN": 104.64583000000002,
+   "QWP_IN": 49.15772
+  },
+  {
+   "setting": "s2",
+   "input_state": 2,
+   "basis": null,
+   "HWP_IN": 292.93739,
+   "QWP_IN": 66.43659
+  },
+  {
+   "setting": "s3",
+   "input_state": 3,
+   "basis": null,
+   "HWP_IN": 303.25254,
+   "QWP_IN": 82.57157
+  },
+  {
+   "setting": "s4",
+   "input_state": 4,
+   "basis": null,
+   "HWP_IN": 46.59804,
+   "QWP_IN": 98.5761
+  }
+ ]
+}

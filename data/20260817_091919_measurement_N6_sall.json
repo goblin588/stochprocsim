@@ -1,0 +1,62 @@
+{
+ "N": "6",
+ "label": "all",
+ "delays_ns": {
+  "2": 2973.17,
+  "3": 3841,
+  "4": 2543.295,
+  "6": 2110.71,
+  "7": 1221.5,
+  "8": 1677.475,
+  "10": 1242.205,
+  "12": 816.0
+ },
+ "thresholds_v": {
+  "3": 0.6,
+  "2": 0.4,
+  "4": 0.4,
+  "6": 0.4,
+  "8": 0.4,
+  "10": 0.4,
+  "12": 0.4,
+  "7": 0.2
+ },
+ "coincidence_window_ns": 2.0,
+ "det_chs": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  7
+ ],
+ "dump_ch": 7,
+ "trigg_ch": 3,
+ "sim_mode": false,
+ "git_commit": "c220e3b",
+ "saved_at": "2026-08-17T09:19:20.633597",
+ "noise_calibration": {
+  "file": "20260816_203132_noise_calibration.json",
+  "saved_at": "2026-08-16T20:31:32.372434"
+ },
+ "background_offset_ns": 20.0,
+ "background": {
+  "herald": 985297,
+  "singles_ch2": 18313,
+  "coinc_ch2": 5,
+  "singles_ch4": 18313,
+  "coinc_ch4": 4,
+  "singles_ch6": 18313,
+  "coinc_ch6": 9,
+  "singles_ch8": 18313,
+  "coinc_ch8": 7,
+  "singles_ch10": 18313,
+  "coinc_ch10": 2,
+  "singles_ch12": 18313,
+  "coinc_ch12": 9,
+  "singles_ch7": 46054,
+  "coinc_ch7": 21,
+  "int_time": 10.029931799974293
+ }
+}

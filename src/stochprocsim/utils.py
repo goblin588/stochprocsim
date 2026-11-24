@@ -1,11 +1,13 @@
 import json
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.special import rel_entr
 
-from stochprocsim.stochprocq.models.renewal import RenewalProcess
+from stochprocsim.stochprocq.models.renewal import RenewalProcess, get_uniform_renewal
+from stochprocsim.stochprocq.measure import eval_diverge
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -13,7 +15,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DETECTOR_EFFICIENCY = {
     'herald': 0.6,
     'dump': 0.68,
-    'loop': 0.755,
+    # loop = 1 (reference) -- matches loss_calibration_for's own documented
+    # convention ("loop = 1 reference, dump relative to it" via
+    # det_eff_dump), which the previous 0.755 silently violated. 0.755 was
+    # never actually tied to that calibration mechanism -- det_eff_dump has
+    # never been populated in any real calibration file (always defaults
+    # to 0.0), so it wasn't "relative to" anything measured, just a free-
+    # floating guess. Uniform across all loop channels either way, so this
+    # only changes the loop-vs-dump weighting in the normalized
+    # distribution, not loop-vs-loop ratios, and doesn't affect T at all
+    # (T is a same-detector count ratio, this constant cancels out of it).
+    'loop': 1.0,
 }
 
 
@@ -80,6 +92,32 @@ def background_rate_by_channel(json_path: Path) -> tuple[dict, str]:
     return {}, "none (background=0)"
 
 
+def background_rate_std_by_channel(json_path: Path) -> tuple[dict, str]:
+    """Per-channel background-rate SEM (Hz), companion to
+    background_rate_by_channel -- only available for the inline source
+    (json_path's own "background" field), since that's the only one that
+    keeps the per-bin breakdown (bg_row["bins"]) needed to compute a
+    spread; the embedded/pointer noise_calibration sources only ever carry
+    a single collapsed background_rate_hz number, so there's nothing to
+    derive an error from there -- returns {} (treat as exactly known, the
+    previous default) with a note saying why, rather than a fake 0.0 that
+    looks like "measured and tiny" instead of "not available".
+    """
+    if not json_path.exists():
+        return {}, "none (no std available)"
+    meta = json.loads(json_path.read_text())
+    bg_row = meta.get("background")
+    bins = bg_row.get("bins") if bg_row else None
+    if not bins:
+        return {}, "none (no per-bin background data to derive a std from)"
+    chs = [k.removeprefix("coinc_ch") for k in bg_row if k.startswith("coinc_ch")]
+    by_ch = {}
+    for ch in chs:
+        bin_rates = [b[f"coinc_ch{ch}"] / b["int_time"] for b in bins if b["int_time"]]
+        by_ch[ch] = (np.std(bin_rates, ddof=1) / len(bin_rates) ** 0.5) if len(bin_rates) > 1 else 0.0
+    return by_ch, f"inline, {len(bins)} bins"
+
+
 def _loss_calibration_meta(json_path: Path, *, require: str) -> tuple[dict, str]:
     """The *_loss_calibration.json content in effect for a specific
     measurement — shared lookup behind loss_calibration_for/loss_rates_for.
@@ -92,12 +130,19 @@ def _loss_calibration_meta(json_path: Path, *, require: str) -> tuple[dict, str]
     carries "file"/"stages"/"losses", never the standalone file's own
     "coincidence_rates_hz", so a caller that needs rates must fall through
     to the directory lookup below even when an embed is present.
-    Falls back to whichever *_loss_calibration.json is most recent next to
-    json_path, for older measurements taken before that field was
-    embedded, or whenever the embed lacks `require` — note that fallback
-    isn't necessarily what was actually in effect for this specific
-    measurement, just the best available guess.
-    Returns ({}, note) if neither is available.
+    Falls back to the most recent *_loss_calibration.json AT OR BEFORE
+    json_path's own timestamp (parsed from its filename, the same
+    YYYYMMDD_HHMMSS pattern used throughout this codebase) — for older
+    measurements taken before the embed existed, or whenever the embed
+    lacks `require`. This used to just grab whichever *_loss_calibration.json
+    was most recent *anywhere in the directory*, with no regard for
+    json_path's own date — confirmed wrong on real data (an old
+    measurement would silently pick up a brand-new calibration taken days
+    later). Still a guess when it's used at all (an embed, when present,
+    is exact and preferred above), and if json_path's own timestamp can't
+    be parsed or nothing qualifies before it, falls back further to
+    whatever's most recent in the directory, clearly labelled as such.
+    Returns ({}, note) if nothing is available at all.
     """
     if json_path.exists():
         cal = json.loads(json_path.read_text()).get("loss_calibration")
@@ -107,8 +152,18 @@ def _loss_calibration_meta(json_path: Path, *, require: str) -> tuple[dict, str]
     files = sorted(json_path.parent.glob("*_loss_calibration.json"), key=lambda p: p.name)
     if not files:
         return {}, "none (no *_loss_calibration.json found)"
+
+    ts_match = re.search(r"\d{8}_\d{6}", json_path.name)
+    if ts_match:
+        meas_ts = ts_match.group()
+        prior = [f for f in files
+                 if (m := re.search(r"\d{8}_\d{6}", f.name)) and m.group() <= meas_ts]
+        if prior:
+            chosen = prior[-1]
+            return json.loads(chosen.read_text()), f"{chosen.name} (nearest prior to this measurement)"
+
     latest = files[-1]
-    return json.loads(latest.read_text()), f"{latest.name} (dir fallback, not necessarily in effect)"
+    return json.loads(latest.read_text()), f"{latest.name} (dir fallback -- no earlier calibration found, not necessarily in effect)"
 
 
 def loss_calibration_for(json_path: Path) -> tuple[dict, str]:
@@ -179,6 +234,63 @@ def rates_by_input_state(data: pd.DataFrame, bins: list[str],
 
     combined_stds = (within_sem ** 2 + between_sem ** 2) ** 0.5
     return combined_rates, combined_stds
+
+
+def drop_count_outliers(data: pd.DataFrame, bins: list[str], ratio: float = 15.0,
+                         floor: float = 50.0) -> pd.DataFrame:
+    """Drop rows where any `bins` column reads more than `ratio` x that
+    column's own median (and at least `floor`, so a near-zero-median
+    channel like the dump bin doesn't flag every nonzero reading as an
+    "outlier"). Isolated detector glitches (one row spiking to 1000x+ its
+    channel's normal count) blow up a row-level or block-averaged SEM
+    alike -- averaging doesn't fix a single catastrophic spike, it just
+    spreads the same total deviation over however many blocks it lands in
+    (confirmed on real data: block_rate_mean_std barely moved the SEM on a
+    file with exactly this kind of spike). This has to run before any mean/
+    std is taken, not after.
+    """
+    med = data[bins].median()
+    thresh = {b: max(floor, med[b] * ratio) for b in bins}
+    mask = (data[bins] > pd.Series(thresh)).any(axis=1)
+    return data[~mask]
+
+
+def block_rate_mean_std(data: pd.DataFrame, bins: list[str], block_size: int = 30):
+    """Per-channel (mean_rate, SEM) computed over block_size-row super-bins
+    instead of individual rows -- feeds a Monte Carlo (kl_rate_mc_error)
+    that would otherwise see an inflated SEM at 1 row/s resolution on the
+    weak, low-count high-pass channels (ch12/ch14-style), where a single
+    row's count is often 0-2 and the row-to-row Poisson/discreteness noise
+    swamps the real spread. Grouping `block_size` consecutive rows into one
+    super-bin (summed counts / summed int_time, same recipe as
+    calibrate_loss's own 5s bins elsewhere in this codebase) before taking
+    std/sqrt(n_blocks) trades time resolution for a steadier estimate --
+    same data, fewer, larger samples. A short trailing remainder (< one
+    full block) is dropped rather than padded, same convention as a
+    rolling-window average.
+
+    `data` must already be filtered to one input_state/basis combination
+    (e.g. s0, same precondition as rates_by_input_state) and in time order.
+    Returns (mean: pd.Series, sem: pd.Series) indexed by `bins`.
+
+    Raises ValueError if `data` has fewer than `block_size` rows (zero
+    whole blocks) -- `block_means.mean(axis=0)` on an empty array would
+    otherwise silently return NaN (with sem=0.0, not NaN, which looks even
+    more like a real answer) instead of surfacing that there wasn't
+    enough data to compute anything at all.
+    """
+    n_blocks = len(data) // block_size
+    if n_blocks == 0:
+        raise ValueError(f"block_rate_mean_std: only {len(data)} rows, need at least "
+                          f"block_size={block_size} to form one block")
+    block_means = np.empty((n_blocks, len(bins)))
+    for i in range(n_blocks):
+        block = data.iloc[i * block_size:(i + 1) * block_size]
+        block_means[i] = (block[bins].sum() / block["int_time"].sum()).to_numpy()
+    mean = pd.Series(block_means.mean(axis=0), index=bins)
+    sem = pd.Series(block_means.std(axis=0, ddof=1) / n_blocks ** 0.5, index=bins) if n_blocks > 1 \
+        else pd.Series(0.0, index=bins)
+    return mean, sem
 
 
 def kl_divergence(p, q) -> float:
@@ -253,6 +365,95 @@ def exit_distribution(probs, start: int = 0) -> np.ndarray:
         survived *= probs[j]
     exit_p[len(probs)] = survived
     return exit_p
+
+
+def kl_rate_from_output_distribution(N: int, output_distribution) -> float:
+    """KL-divergence rate (bits/step) between the N-loop uniform renewal
+    theory model and an experimental output distribution over exactly N
+    bins (loop-pass 1..N-1, plus a final catch-all "everything else"
+    bin -- NOT N+1 separate loop-pass-then-dump bins; generate_quantum_model
+    builds an N-state RenewalProcess from an N-entry input, matching
+    get_uniform_renewal(N-1)'s own N states). Every real caller already
+    truncates its (N+1)-or-more-channel array to exactly N entries before
+    calling this -- e.g. frac.to_numpy()[:N] -- so matching that length
+    here is required, not optional; a wrong-length input gives a silently
+    different (wrong) number, not an error. The "_get_KL_rate" calc used
+    ad hoc in demos/marimo/plot_experimental_data.py, promoted to a real
+    function so it has one definition instead of being re-copy-pasted into
+    every notebook/live-measurement caller."""
+    theory = get_uniform_renewal(N - 1)
+    model = generate_quantum_model(output_distribution)
+    p_dist = theory.steady_state @ theory.gen_dists(N + 1)
+    q_dist = model.steady_state @ model.gen_dists(N + 1)
+    return eval_diverge(p_dist, q_dist, his_steps=N - 1)
+
+
+def kl_rate_mc_error(N: int, rates, rate_stds, T_measured: float, T_measured_std: float,
+                      bg, eff, bins: list[str], bg_std=None, n_samples: int = 200,
+                      rng: np.random.Generator | None = None,
+                      check_convergence: bool = False):
+    """Monte Carlo (mean, std) of kl_rate_from_output_distribution under the
+    real sources of uncertainty in the loss-corrected output distribution:
+    shot noise in the measured per-bin rates (rates/rate_stds, e.g. from
+    rates_by_input_state), uncertainty in the measured per-loop transmission
+    T (T_measured/T_measured_std, e.g. from loss_rates_for's loop0_hz/
+    loop1_hz SEMs), and -- since 2026-11-23 -- uncertainty in the background
+    estimate itself (bg_std, e.g. from background_rate_std_by_channel).
+    Background matters most exactly where it's least certain: the loss
+    correction divides by T**k, which at high k (late loop passes) can be
+    ~1000x smaller than at k=1, so a channel where background is a sizeable
+    fraction of the raw rate gets that uncertainty amplified by the same
+    ~1000x in the final bar -- omitting it was understating the real error
+    on exactly the channels most worth worrying about. bg_std defaults to
+    None (no background resampling, the pre-2026-11-23 behaviour) since
+    it's genuinely not always available (background_rate_std_by_channel
+    returns {} when there's no per-bin breakdown to compute it from).
+
+    Each sample redraws rates/T/background from their already-computed
+    Normal(mean, SEM) -- the SEM already *is* the shot-noise/root-n spread,
+    so resampling from it reproduces that noise without re-deriving Poisson
+    statistics from raw per-bin counts the pipeline doesn't keep -- and
+    redoes the full loss-correction + KL-rate calc, matching the method
+    designed (but never committed) in plot_experimental_data.py's 2026-11-20
+    comments: T is clipped to [0.01, 0.99] per that design, since T outside
+    that range is a numerical artifact of the resampling, not a real reading.
+
+    check_convergence=True additionally splits the n_samples draws already
+    taken into two independent halves and compares their std()s -- cheap
+    (no extra sampling, just re-slicing what was already computed), and
+    catches the same failure mode this file's own history already hit
+    once: a large T_measured_std can give eval_diverge's output a heavy
+    right tail, where std() at "the usual" sample count varies run to run
+    by up to 2x and only settles down at 10x more samples (see
+    plot_experimental_data.py's 2026-11-20 comment on the 11-19 series,
+    which needed 20000 samples instead of 2000 for exactly this reason).
+    Returns (mean, std, converged) instead of (mean, std) when enabled --
+    converged=False means the two halves disagree by >20%, i.e. std is not
+    yet trustworthy at this n_samples and should be rerun with more.
+    """
+    rng = rng or np.random.default_rng()
+    rates = np.asarray(rates, dtype=float)
+    rate_stds = np.asarray(rate_stds, dtype=float)
+    bg = np.asarray(bg, dtype=float)
+    bg_std = np.zeros_like(bg) if bg_std is None else np.asarray(bg_std, dtype=float)
+    eff = np.asarray(eff, dtype=float)
+    k = np.array([N if b == "coinc_ch7" else loop_pass_k(b, bins) for b in bins])
+    kls = np.empty(n_samples)
+    for i in range(n_samples):
+        T = np.clip(rng.normal(T_measured, T_measured_std), 0.01, 0.99)
+        sampled_rates = rng.normal(rates, rate_stds)
+        sampled_bg = rng.normal(bg, bg_std)
+        corr = ((sampled_rates - sampled_bg) / eff) / (T ** k)
+        frac = np.clip(corr, 0, None)
+        frac = (frac / frac.sum())[:N]
+        kls[i] = kl_rate_from_output_distribution(N, frac)
+    mean, std = float(kls.mean()), float(kls.std())
+    if not check_convergence:
+        return mean, std
+    half = n_samples // 2
+    std_a, std_b = kls[:half].std(), kls[half:2 * half].std()
+    converged = abs(std_a - std_b) <= 0.20 * max(std_a, std_b, 1e-12)
+    return mean, std, converged
 
 
 def _demo():
@@ -359,6 +560,32 @@ def _demo():
         assert "dir fallback" in note5
     print("loss_rates_for: ok")
 
+    # loss_rates_for's directory fallback: an OLDER measurement (no embed)
+    # must pick the calibration that was actually in effect at ITS OWN
+    # time, not whichever calibration is newest in the whole directory --
+    # confirmed wrong on real data before this fix (a 2026-11-21 measurement
+    # was silently picking up a 2026-11-23 calibration taken two days later)
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / "20260101_000000_loss_calibration.json").write_text(
+            json.dumps({"coincidence_rates_hz": {"loop0_hz": 10.0, "loop1_hz": 1.0}}))
+        (tmp / "20260103_000000_loss_calibration.json").write_text(
+            json.dumps({"coincidence_rates_hz": {"loop0_hz": 999.0, "loop1_hz": 999.0}}))
+        old_run = tmp / "20260102_000000_measurement_N3_sall.json"
+        old_run.write_text(json.dumps({}))
+        rates3, note6 = loss_rates_for(old_run)
+        assert rates3 == {"loop0_hz": 10.0, "loop1_hz": 1.0}, rates3
+        assert "nearest prior" in note6 and "20260101" in note6
+
+        # a measurement from BEFORE every calibration file -> no valid prior,
+        # falls all the way back to dir-wide latest, clearly labelled as such
+        earliest_run = tmp / "20251231_000000_measurement_N3_sall.json"
+        earliest_run.write_text(json.dumps({}))
+        rates4, note7 = loss_rates_for(earliest_run)
+        assert rates4 == {"loop0_hz": 999.0, "loop1_hz": 999.0}
+        assert "no earlier calibration found" in note7
+    print("loss_rates_for (nearest-prior fallback): ok")
+
     # ordinary run: no basis column at all -> plain per-state mean/SEM
     plain = pd.DataFrame({
         "input_state": [0, 0, 1, 1],
@@ -403,6 +630,46 @@ def _demo():
     assert stds4.loc[0, "a"] > between_sem * 0.9  # between-pair spread dominates and is captured
     print("rates_by_input_state: ok")
 
+    # block_rate_mean_std: block-averaged SEM must land close to the naive
+    # row-by-row SEM in expectation (same underlying noise, just grouped),
+    # but with noticeably less run-to-run scatter -- the whole point of
+    # averaging blocks of rows before computing the spread, rather than
+    # trusting single rows' Poisson noise directly.
+    _rng = np.random.default_rng(0)
+    _n_rows = 3000
+    _block_df = pd.DataFrame({
+        "a": _rng.poisson(5.0, _n_rows).astype(float),
+        "int_time": np.ones(_n_rows),
+    })
+    _naive_mean, _naive_sem = rates_by_input_state(
+        pd.DataFrame({**_block_df, "input_state": 0}), ["a"])
+    _block_mean, _block_sem = block_rate_mean_std(_block_df, ["a"], block_size=30)
+    assert np.isclose(_block_mean["a"], _naive_mean.loc[0, "a"], rtol=0.05)
+    assert _block_sem["a"] > 0
+    # a block_size of 1 must reduce to exactly the per-row SEM (no grouping)
+    _row_mean, _row_sem = block_rate_mean_std(_block_df, ["a"], block_size=1)
+    assert np.isclose(_row_sem["a"], _naive_sem.loc[0, "a"], rtol=1e-9)
+    # fewer rows than one block must raise, not silently return NaN
+    try:
+        block_rate_mean_std(_block_df.iloc[:5], ["a"], block_size=30)
+        assert False, "expected ValueError for too few rows"
+    except ValueError:
+        pass
+    print("block_rate_mean_std: ok")
+
+    # drop_count_outliers: a single catastrophic spike on one channel must
+    # be removed, normal rows and a legitimately-near-zero channel
+    # (dump-bin style) must survive untouched
+    _outlier_df = pd.DataFrame({
+        "coinc_ch4": [7000, 7100, 7050, 6900],
+        "coinc_ch7": [0, 1, 0, 0],  # near-zero median -> floor, not ratio, guards it
+    })
+    _outlier_df.loc[2, "coinc_ch4"] = 500_000  # the spike
+    _cleaned = drop_count_outliers(_outlier_df, ["coinc_ch4", "coinc_ch7"])
+    assert len(_cleaned) == 3
+    assert 500_000 not in _cleaned["coinc_ch4"].to_numpy()
+    print("drop_count_outliers: ok")
+
     # exit_distribution: starting fresh (state 0), a 3-loop process with
     # survival probs [0.5, 0.5] must exit somewhere -> sums to 1, and
     # matches hand-computed per-loop exit probabilities
@@ -446,6 +713,73 @@ def _demo():
     real_n4_case = generate_quantum_model([0.32116471, 0.43705113, 0.25965067, 0.03681412])
     assert not np.any(real_n4_case.transitions < 0)
     print("generate_quantum_model: ok")
+
+    # kl_rate_from_output_distribution: the uniform renewal theory model
+    # compared against ITSELF must be ~0 (same process, no divergence);
+    # a visibly different distribution must come back clearly positive
+    N4 = 4
+    uniform_theory = get_uniform_renewal(N4 - 1)
+    self_dist = exit_distribution(uniform_theory.probs, start=0)
+    assert kl_rate_from_output_distribution(N4, self_dist) < 1e-6
+    skewed_dist = np.array([0.7, 0.1, 0.1, 0.1])
+    assert kl_rate_from_output_distribution(N4, skewed_dist) > 0.05
+    # exactly N entries required, NOT N+1 -- a caller passing one extra
+    # "dump bin" entry (matching an easy misreading of the docstring
+    # before it was corrected) gets a silently different number, not an
+    # error, so this is worth locking in explicitly as a real difference
+    wrong_length_dist = np.array([0.7, 0.1, 0.1, 0.05, 0.05])  # N4+1 entries
+    assert not np.isclose(kl_rate_from_output_distribution(N4, skewed_dist),
+                           kl_rate_from_output_distribution(N4, wrong_length_dist))
+    print("kl_rate_from_output_distribution: ok")
+
+    # kl_rate_mc_error: tight SEMs (near-exact rates/T) must collapse the MC
+    # spread to ~0 and recover close to the point-estimate KL; wide SEMs
+    # must blow the spread back up -- std() actually tracks input uncertainty
+    _bins = ["coinc_ch4", "coinc_ch6", "coinc_ch8", "coinc_ch7"]
+    _rates = np.array([40.0, 12.0, 4.0, 1.0])
+    _bg = np.zeros(4)
+    _eff = np.ones(4)
+    _T, _rng = 0.3, np.random.default_rng(0)
+    mean_tight, std_tight = kl_rate_mc_error(
+        N4, _rates, _rates * 1e-6, _T, 1e-6, _bg, _eff, _bins, n_samples=200, rng=_rng)
+    point_estimate = kl_rate_from_output_distribution(
+        N4, np.clip(_rates / _T ** np.array([1, 2, 3, 4]), 0, None) /
+        np.clip(_rates / _T ** np.array([1, 2, 3, 4]), 0, None).sum())
+    assert std_tight < 1e-3
+    assert np.isclose(mean_tight, point_estimate, atol=1e-2)
+    _, std_wide = kl_rate_mc_error(
+        N4, _rates, _rates * 0.3, _T, 0.1, _bg, _eff, _bins, n_samples=200, rng=_rng)
+    assert std_wide > std_tight
+
+    # background uncertainty: with everything else tight, a sizeable
+    # background SEM on the weakest (highest-k, most loss-amplified)
+    # channel alone must still blow the spread up -- this is the whole
+    # point of adding it (2026-11-23: a residual that "looked" certain was
+    # silently ignoring exactly this)
+    _bg_std = np.array([0.0, 0.0, 0.0, 0.3])  # all on the weak ch7/pass-4 bin
+    _, std_bg = kl_rate_mc_error(
+        N4, _rates, _rates * 1e-6, _T, 1e-6, _bg, _eff, _bins,
+        bg_std=_bg_std, n_samples=200, rng=_rng)
+    assert std_bg > std_tight
+    print("kl_rate_mc_error: ok")
+
+    # check_convergence: plenty of samples on a tight-SEM case must agree
+    # between its two halves (converged=True); forcing the ultra-wide
+    # T_measured_std from the earlier "wide" case down to very few samples
+    # should trip the other way, letting the check actually catch a real
+    # under-sampled case rather than always reporting converged=True
+    _, _, _converged_tight = kl_rate_mc_error(
+        N4, _rates, _rates * 1e-6, _T, 1e-6, _bg, _eff, _bins,
+        n_samples=2000, rng=np.random.default_rng(1), check_convergence=True)
+    assert _converged_tight
+    _any_unconverged = False
+    for _seed in range(10):
+        _, _, _c = kl_rate_mc_error(
+            N4, _rates, _rates * 0.3, _T, 0.3, _bg, _eff, _bins,
+            n_samples=20, rng=np.random.default_rng(_seed), check_convergence=True)
+        _any_unconverged = _any_unconverged or not _c
+    assert _any_unconverged, "convergence check never fired across 10 seeds at n_samples=20 -- too lax"
+    print("kl_rate_mc_error (check_convergence): ok")
 
 
 if __name__ == "__main__":

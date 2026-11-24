@@ -16,25 +16,15 @@ def _():
 
 
 @app.cell
-def _(get_uniform_renewal):
+def _(RenewalProcess, eval_diverge, get_uniform_renewal, np):
     # For N = 3
     N = 3
     model = get_uniform_renewal(N-1)
     print(f'The probability of tick (output 1) at each memory state: {[1-p for p in model.probs] + [1]}')
     print(f'The stationary distribution of the memory states are: {model.steady_state}')
-    return N, model
 
-
-@app.cell
-def _(mo):
-    mo.md(r"""This is where i become lost. These three numbers '[0.37, 0.32, 0.31]' you said were arbitrary ones which you have chosen. In our meeting, it sounded like this should not influence the divergence rate though its easy to see that they do through varying these numbers.""")
-    return
-
-
-@app.cell
-def _(RenewalProcess, eval_diverge, model, np):
     # Define Quantum Model
-    q_emit = np.array([ 0.322196,0.503246,0.166753])
+    q_emit = np.array([0.3413, 0.4674, 0.172])
     q_survive_st = np.zeros_like(q_emit)
     q_survive_st[0] = q_emit[0]
     for i in range(1, len(q_emit)):
@@ -43,12 +33,18 @@ def _(RenewalProcess, eval_diverge, model, np):
     q_model = RenewalProcess([1-q for q in q_survive_st[:-1]])
 
     # Calculate distributions and divergence between Quantum and Exact models
-    p_dist = model.gen_dists(4)[0]
-    q_dist = q_model.gen_dists(4)[0]
+    p_dist = model.gen_dists(N+1)[0]
+    q_dist = q_model.gen_dists(N+1)[0]
 
-    ave_kl_div_rate = eval_diverge(p_dist, q_dist, his_steps=3)
+    ave_kl_div_rate = eval_diverge(p_dist, q_dist, his_steps=N-1)
     print(f'Average KL divergence rate between the two models: {ave_kl_div_rate}')
-    return ave_kl_div_rate, p_dist
+    return N, ave_kl_div_rate, p_dist
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""This is where i become lost. These three numbers '[0.37, 0.32, 0.31]' you said were arbitrary ones which you have chosen. In our meeting, it sounded like this should not influence the divergence rate though its easy to see that they do through varying these numbers.""")
+    return
 
 
 @app.cell
@@ -77,7 +73,8 @@ def _(N, np):
 @app.cell
 def _(RenewalProcess, ave_kl_div_rate, eval_diverge, np, p_dist):
     # Define Quantum Model
-    q_emit2 = np.array([0.32, 0.47, 0.18])
+    q_emit2 = np.array([0.42, 0.24, 0.25]
+    )
     q_survive_st2 = np.zeros_like(q_emit2)
     q_survive_st2[0] = q_emit2[0]
     for k in range(1, len(q_emit2)):

@@ -1,0 +1,28 @@
+[
+ {
+  "type": "loss",
+  "stage": "ch2"
+ },
+ {
+  "type": "loss",
+  "stage": "ch4"
+ },
+ {
+  "type": "loss",
+  "stage": "5050"
+ },
+ {
+  "type": "measurement",
+  "N": "3",
+  "js": "all",
+  "tomo": false,
+  "duration_s": 180.0
+ },
+ {
+  "type": "measurement",
+  "N": "4",
+  "js": "all",
+  "tomo": false,
+  "duration_s": 180.0
+ }
+]

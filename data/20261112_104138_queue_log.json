@@ -1,0 +1,76 @@
+{
+ "started_at": "2026-11-12T10:41:38.355377",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-12T10:41:38.355398",
+   "status": "ok",
+   "finished_at": "2026-11-12T11:21:07.082809"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01"
+   },
+   "started_at": "2026-11-12T11:21:07.084005",
+   "status": "ok",
+   "finished_at": "2026-11-12T11:26:15.241802"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050"
+   },
+   "started_at": "2026-11-12T11:26:15.243272",
+   "status": "ok",
+   "finished_at": "2026-11-12T11:28:08.090212"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": "all",
+    "tomo": false,
+    "duration_s": 300.0
+   },
+   "started_at": "2026-11-12T11:28:08.091351",
+   "status": "failed",
+   "error": "'source_dump'",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1532, in run_queue\n    sig = _step_signature(step)\n                ~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1509, in _run_queue_step\n    def _step_signature(step):\n            ^^^^^^^^^^^^^^^^^^\n        \"\"\"Stable key for DURATIONS_FILE -- the same step 'shape' reuses\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 987, in measurement\n    _save_results(rows, N, label, background=background)\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 262, in _save_results\n    LOSS_STAGE_LABELS[key]: _stage_summary(stage)\n    ~~~~~~~~~~~~~~~~~^^^^^\nKeyError: 'source_dump'\n",
+   "finished_at": "2026-11-12T11:52:19.601172"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": "all",
+    "tomo": false,
+    "duration_s": 180.0
+   },
+   "started_at": "2026-11-12T11:52:19.602553",
+   "status": "failed",
+   "error": "'source_dump'",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1532, in run_queue\n    sig = _step_signature(step)\n                ~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1509, in _run_queue_step\n    def _step_signature(step):\n            ^^^^^^^^^^^^^^^^^^\n        \"\"\"Stable key for DURATIONS_FILE -- the same step 'shape' reuses\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 987, in measurement\n    _save_results(rows, N, label, background=background)\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 262, in _save_results\n    LOSS_STAGE_LABELS[key]: _stage_summary(stage)\n    ~~~~~~~~~~~~~~~~~^^^^^\nKeyError: 'source_dump'\n",
+   "finished_at": "2026-11-12T12:10:42.585458"
+  }
+ ],
+ "finished_at": "2026-11-12T12:10:42.586548",
+ "ok": 3,
+ "failed": 2
+}
