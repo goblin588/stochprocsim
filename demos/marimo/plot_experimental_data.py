@@ -18,7 +18,6 @@ def _():
         block_rate_mean_std,
         drop_count_outliers,
         efficiency_for_channel,
-        kl_rate_between_distributions,
         kl_rate_from_output_distribution,
         kl_rate_mc_error,
         loop_pass_k,
@@ -31,7 +30,6 @@ def _():
         drop_count_outliers,
         efficiency_for_channel,
         io,
-        kl_rate_between_distributions,
         kl_rate_from_output_distribution,
         kl_rate_mc_error,
         loop_pass_k,
@@ -187,13 +185,7 @@ def _(BINS, N, loop_pass_k, np, rates):
         true_theory[_s] = _map_to_bins(_sim_true.get_output_distribution(propagate_outputs=True, start_state=int(_s)))
         print(f"s{_s} theory (getUtot):     {np.round(p_theory[_s], 4)}")
         print(f"s{_s} true_theory (U_theo): {np.round(true_theory[_s], 4)}")
-    return (
-        Causal_Models,
-        QuantumTransitionModel,
-        Simulator,
-        p_theory,
-        true_theory,
-    )
+    return Causal_Models, QuantumTransitionModel, Simulator, p_theory, true_theory
 
 
 @app.cell(hide_code=True)
@@ -224,8 +216,9 @@ def _(BINS, N, loop_pass_k, np, rates):
 
 @app.cell(hide_code=True)
 def _(np, plt, sns):
-    def plot_state_grid(frac_by_state, yerr_by_state, p_theory, suptitle, p_exact=None, titles=None):
+    def plot_state_grid(frac_by_state, yerr_by_state, p_theory, suptitle, p_exact=None, true_theory=None, titles=None):
         p_exact = p_exact or {}
+        true_theory = true_theory or {}
         _states = sorted(frac_by_state)
         _ncols = min(3, len(_states))
         _nrows = -(-len(_states) // _ncols)
@@ -244,6 +237,9 @@ def _(np, plt, sns):
             if _s in p_exact:
                 _ax.bar(_x, p_exact[_s], width=0.5, fill=False, edgecolor="red",
                         linestyle="dashed", linewidth=0.8, label="exact model")
+            if _s in true_theory:
+                _ax.bar(_x, true_theory[_s], width=0.5, fill=False, edgecolor="#1F9E89",
+                        linestyle="dashdot", linewidth=1.2, label="true_theory")
             _ax.set_xticks(_x, _f.index)
             _ax.tick_params(axis="x", labelsize=7)
             _ax.set_title(titles[_s] if titles else f"input s{_s}", fontsize=8)
@@ -255,7 +251,7 @@ def _(np, plt, sns):
 
 
 @app.cell(hide_code=True)
-def _(p_exact, p_theory, plot_state_grid, rates, stds):
+def _(p_exact, p_theory, plot_state_grid, rates, stds, true_theory):
     # raw fraction per bin vs theory (no loss correction)
     plot_state_grid(
         {_s: rates.loc[_s] / rates.loc[_s].sum() for _s in rates.index},
@@ -263,6 +259,7 @@ def _(p_exact, p_theory, plot_state_grid, rates, stds):
         p_theory,
         "raw fractions vs theory",
         p_exact=p_exact,
+        true_theory=true_theory,
     )
 
     print(rates.loc[:,:])
@@ -454,6 +451,7 @@ def _(
     plot_state_grid,
     rates,
     stds,
+    true_theory,
 ):
     # T_measured: per-loop transmission measured directly from the loss
     # calibration's own coincidence rates -- loop1_hz / loop0_hz (the
@@ -492,7 +490,7 @@ def _(
     print(f"s0 (loss-corrected, T_measured): {np.round(frac[0].to_numpy(), 4)}")
     plot_state_grid(frac, yerr, p_theory,
                     f"loss-corrected (T_measured={T_measured:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
-                    p_exact=p_exact)
+                    p_exact=p_exact, true_theory=true_theory)
     return T_measured, T_measured_std, frac
 
 
@@ -509,6 +507,7 @@ def _(
     plot_state_grid,
     rates,
     stds,
+    true_theory,
 ):
     # T_fit (old method, pre-T_measured): per-loop transmission T fitted
     # against the S0 input distribution only (bin k has traversed k loops,
@@ -536,7 +535,7 @@ def _(
     print(f"s0 (loss-corrected, T_fit): {np.round(frac_fit[0].to_numpy(), 4)}")
     plot_state_grid(frac_fit, yerr_fit, p_theory,
                     f"loss-corrected (T_fit={T_fit:.2f}, bckgnd avg={bg.mean():.2f}) vs theory",
-                    p_exact=p_exact)
+                    p_exact=p_exact, true_theory=true_theory)
     return T_fit, frac_fit
 
 
@@ -944,11 +943,12 @@ def _(best_results, plot_state_grid):
     _yerr_by_n = {_n: _r["yerr"] for _n, _r in best_results.items()}
     _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in best_results.items()}
     _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in best_results.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in best_results.items()}
     _titles = {_n: f"N={_n}  T={_r['T']:.3f}±{_r['T_err']:.3f}\nKL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
                for _n, _r in best_results.items()}
     plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
                      "Current best-rated (last week) output distributions vs theory",
-                     p_exact=_p_exact_by_n, titles=_titles)
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
     return
 
 
@@ -1050,7 +1050,7 @@ def _(
         _ax.fill_between(_x_c, _y_c, _ax.get_ylim()[1], alpha=0.3, color="none",
                           edgecolor=_c_classical, hatch="///")
         _ax.set_xticks(_x_c)
-        _ax.set_ylim(0, 0.1)
+        # _ax.set_ylim(0, 0.4)
         _ax.set_xlabel("Process length N")
         _ax.set_ylabel(r"$R_{KL}$")
         _ax.set_title("KL Divergence Rate for Process Depth N")
@@ -1069,7 +1069,6 @@ def _(
     block_rate_mean_std,
     drop_count_outliers,
     efficiency_for_channel,
-    kl_rate_between_distributions,
     kl_rate_from_output_distribution,
     kl_rate_mc_error,
     loop_pass_k,
@@ -1230,20 +1229,12 @@ def _(
         p_theory, p_exact, true_theory = p_theory[_keep], p_exact[_keep], true_theory[_keep]
         theory_residual = float(np.abs(frac.to_numpy() - p_theory).sum())
 
-        # KL vs. the two theory_U candidates directly (not the
-        # uniform-renewal model point_kl/mc_mean above compares against),
-        # per 2026-11-25 request: one line for the frozen true_theory
-        # matrix, one for the getUtot(angles_NTU) theory used in the bars.
-        kl_vs_true_theory = kl_rate_between_distributions(pick_N, frac.to_numpy(), true_theory)
-        kl_vs_getutot = kl_rate_between_distributions(pick_N, frac.to_numpy(), p_theory)
-
         return {
             "stem": stem, "T": T, "T_err": T_err,
             "frac": frac, "yerr": yerr, "bins": bins_trunc,
             "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
             "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
             "theory_residual": theory_residual,
-            "kl_vs_true_theory": kl_vs_true_theory, "kl_vs_getutot": kl_vs_getutot,
         }
 
     theory_match_tmeasured = {_n: _theory_match_stats_tmeasured(_stem, _n)
@@ -1257,11 +1248,12 @@ def _(
     _yerr_by_n = {_n: _r["yerr"] for _n, _r in theory_match_tmeasured.items()}
     _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in theory_match_tmeasured.items()}
     _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in theory_match_tmeasured.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in theory_match_tmeasured.items()}
     _titles = {_n: f"N={_n}  T_measured={_r['T']:.3f}±{_r['T_err']:.3f}\nresidual={_r['theory_residual']:.3f}  KL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
                for _n, _r in theory_match_tmeasured.items()}
     plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
                      f"Closest-to-theory-U output distributions, T_measured (last {_SEARCH_WINDOW_DAYS_TM} days)",
-                     p_exact=_p_exact_by_n, titles=_titles)
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
     return (theory_match_tmeasured,)
 
 
@@ -1275,7 +1267,6 @@ def _(
     block_rate_mean_std,
     drop_count_outliers,
     efficiency_for_channel,
-    kl_rate_between_distributions,
     kl_rate_from_output_distribution,
     kl_rate_mc_error,
     loop_pass_k,
@@ -1439,18 +1430,12 @@ def _(
         p_theory, p_exact, true_theory = p_theory[_keep], p_exact[_keep], true_theory[_keep]
         theory_residual = float(np.abs(frac.to_numpy() - p_theory).sum())
 
-        # KL vs. the two theory_U candidates directly, same as the
-        # T_measured cell's twin computation above.
-        kl_vs_true_theory = kl_rate_between_distributions(pick_N, frac.to_numpy(), true_theory)
-        kl_vs_getutot = kl_rate_between_distributions(pick_N, frac.to_numpy(), p_theory)
-
         return {
             "stem": stem, "T": T, "T_err": T_err,
             "frac": frac, "yerr": yerr, "bins": bins_trunc,
             "point_kl": point_kl, "mc_mean": mc_mean, "mc_std": mc_std,
             "p_theory": p_theory, "p_exact": p_exact, "true_theory": true_theory,
             "theory_residual": theory_residual,
-            "kl_vs_true_theory": kl_vs_true_theory, "kl_vs_getutot": kl_vs_getutot,
         }
 
     theory_match_tfit = {_n: _theory_match_stats_tfit(_stem, _n)
@@ -1464,11 +1449,12 @@ def _(
     _yerr_by_n = {_n: _r["yerr"] for _n, _r in theory_match_tfit.items()}
     _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in theory_match_tfit.items()}
     _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in theory_match_tfit.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in theory_match_tfit.items()}
     _titles = {_n: f"N={_n}  T_fit={_r['T']:.3f}\nresidual={_r['theory_residual']:.3f}  KL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
                for _n, _r in theory_match_tfit.items()}
     plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
                      f"Closest-to-theory-U output distributions, T_fit (last {_SEARCH_WINDOW_DAYS_TF} days)",
-                     p_exact=_p_exact_by_n, titles=_titles)
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
     return (theory_match_tfit,)
 
 
@@ -1493,12 +1479,33 @@ def _(
     from stochprocsim.stochprocq import get_uniform_renewal as _get_uniform_renewal_tm
     from stochprocsim.stochprocq.measure import eval_diverge as _eval_diverge_tm
     from stochprocsim.utils import generate_quantum_model as _generate_quantum_model_tm
+    from stochprocsim.libraries.optics_lib import getUtot as _getUtot_tm2
+    from stochprocsim.models.causal_models import CausalModel as _CausalModel_tm2
 
     def _sim_quantum_tm(n):
         _cs = Causal_Models[n]
         _cs.set_U(_cs.U_theo)
         _q = _generate_quantum_model_tm(
             np.array(Simulator(QuantumTransitionModel(_cs)).get_output_distribution()))
+        _m = _get_uniform_renewal_tm(n - 1)
+        _p_dist = _m.steady_state @ _m.gen_dists(n + 1)
+        _q_dist = _q.steady_state @ _q.gen_dists(n + 1)
+        return _eval_diverge_tm(_p_dist, _q_dist, his_steps=n - 1)
+
+    def _sim_getutot_tm(n):
+        # Same idea as _sim_quantum_tm above (theory vs. the exact/
+        # uniform-renewal model, no measured data involved), but for
+        # getUtot(angles_NTU) instead of the frozen U_theo matrix -- a
+        # local CausalModel, not a mutation of the shared Causal_Models[n]
+        # (unlike _sim_quantum_tm's set_U, which is safe since U_theo is
+        # that model's own default).
+        _cs = Causal_Models[n]
+        _U_getutot = _getUtot_tm2(_cs.angles_NTU)
+        _cm_getutot = _CausalModel_tm2(U=_U_getutot, states=_cs.states,
+                                        angles_NTU=_cs.angles_NTU, angles_GU=_cs.angles_GU,
+                                        name="getutot")
+        _q = _generate_quantum_model_tm(
+            np.array(Simulator(QuantumTransitionModel(_cm_getutot)).get_output_distribution()))
         _m = _get_uniform_renewal_tm(n - 1)
         _p_dist = _m.steady_state @ _m.gen_dists(n + 1)
         _q_dist = _q.steady_state @ _q.gen_dists(n + 1)
@@ -1515,6 +1522,7 @@ def _(
     _x_quant = list(range(_NMIN, _NMAX + 1))
     _x_class = list(range(_NMIN, _NMAX + _C_BUFF))
     _y_quantum = [_sim_quantum_tm(_n) for _n in _x_quant]
+    _y_getutot_theory = [_sim_getutot_tm(_n) for _n in _x_quant]
 
     _ls = [3, 4, 5, 6]
     _y_classical = [_get_bd_tm(_n) for _n in _ls]
@@ -1528,18 +1536,9 @@ def _(
     rate_exp_tfit = [theory_match_tfit[_n]["mc_mean"] for _n in _x_exp_tfit]
     rate_exp_tfit_err = [theory_match_tfit[_n]["mc_std"] for _n in _x_exp_tfit]
 
-    # KL vs. the two theory_U candidates directly (point values, no MC --
-    # these are deterministic given frac/p_theory/true_theory, not
-    # resampled), T_measured picks only. Per 2026-11-25 request: these
-    # answer "how far is the measured distribution from each theory_U
-    # candidate", a different question from the classical/quantum/R_KL
-    # lines above, which all compare against the uniform-renewal model.
-    kl_vs_true_theory = [theory_match_tmeasured[_n]["kl_vs_true_theory"] for _n in _x_exp_tmeasured]
-    kl_vs_getutot = [theory_match_tmeasured[_n]["kl_vs_getutot"] for _n in _x_exp_tmeasured]
-
     _c_classical, _c_quantum = "#3B5BA5", "#4C9A2A"
     _c_exp_tmeasured, _c_exp_tfit = "#C9700E", "#1F9E89"
-    _c_kl_true_theory, _c_kl_getutot = "#8B3A62", "#D4AC0D"
+    _c_getutot_theory = "#8B3A62"
     _x_c, _y_c = np.array(_x_class), np.array(_y_classical)
     _y_q, _e_q = np.array(_y_quantum), np.array(_qtheo_yerr)
 
@@ -1553,10 +1552,8 @@ def _(
                       color=_c_exp_tmeasured, linewidth=1.5, label="Exp (closest to theory_U, T_measured)")
         _ax.errorbar(_x_exp_tfit, rate_exp_tfit, yerr=rate_exp_tfit_err, fmt="^--", capsize=3,
                       color=_c_exp_tfit, linewidth=1.5, label="Exp (closest to theory_U, T_fit)")
-        _ax.plot(_x_exp_tmeasured, kl_vs_true_theory, "o:", color=_c_kl_true_theory,
-                 linewidth=1.5, label="KL vs true_theory (frozen U_theo)")
-        _ax.plot(_x_exp_tmeasured, kl_vs_getutot, "d:", color=_c_kl_getutot,
-                 linewidth=1.5, label="KL vs getUtot theory (angles)")
+        _ax.plot(_x_quant, _y_getutot_theory, "-o", color=_c_getutot_theory,
+                 linewidth=1.5, label="getUtot theory vs exact model")
         _ax.fill_between(_x_c, _y_c, _ax.get_ylim()[1], alpha=0.3, color="none",
                           edgecolor=_c_classical, hatch="///")
         _ax.set_xticks(_x_c)
@@ -1925,12 +1922,13 @@ def _(
     _yerr_by_n = {_n: _r["yerr"] for _n, _r in best_results_remainder.items()}
     _p_theory_by_n = {_n: _r["p_theory"] for _n, _r in best_results_remainder.items()}
     _p_exact_by_n = {_n: _r["p_exact"] for _n, _r in best_results_remainder.items()}
+    _true_theory_by_n = {_n: _r["true_theory"] for _n, _r in best_results_remainder.items()}
     _titles = {_n: f"N={_n}  T={_r['T']:.3f}±{_r['T_err']:.3f}\nKL={_r['mc_mean']:.4f}±{_r['mc_std']:.4f}"
                for _n, _r in best_results_remainder.items()}
     plot_state_grid(_frac_by_n, _yerr_by_n, _p_theory_by_n,
                      "Current best-rated (last week) output distributions vs theory (ch7 -> remainder trial)",
-                     p_exact=_p_exact_by_n, titles=_titles)
-    return
+                     p_exact=_p_exact_by_n, true_theory=_true_theory_by_n, titles=_titles)
+    return (best_results_remainder,)
 
 
 @app.cell(hide_code=True)
@@ -2133,6 +2131,7 @@ def _(
     plot_state_grid(
         {0: frac_pg}, {0: frac_pg * 0}, {0: p_theory_pg},
         f"Playground: N={PICK_N} ({_stem}) -- KL={PLAYGROUND_KL:.4f}",
+        true_theory={0: true_theory_pg},
         titles={0: f"T={T:.3f}  KL={PLAYGROUND_KL:.4f}"},
     )
     return
