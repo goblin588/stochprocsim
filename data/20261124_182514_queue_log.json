@@ -1,0 +1,123 @@
+{
+ "started_at": "2026-11-24T18:25:14.181150",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-24T18:25:14.182276",
+   "status": "ok",
+   "elapsed_s": 1232.4722789999942,
+   "finished_at": "2026-11-24T18:45:46.642358"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T18:45:46.642989",
+   "status": "ok",
+   "elapsed_s": 321.30787810000766,
+   "finished_at": "2026-11-24T18:51:07.965870"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T18:51:07.966690",
+   "status": "ok",
+   "elapsed_s": 113.27958149999904,
+   "finished_at": "2026-11-24T18:53:01.261193"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T18:53:01.261751",
+   "status": "failed",
+   "error": "ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1468, in measurement\n    collect(j, basis, total)\n    ~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1440, in collect\n    kl = kl_live.kl_rate_from_counts(N, kl_counts, kl_int_time,\n                                      background or {'int_time': 1.0},\n                                      loss_cal, st.det_chs_for(N))\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2389, in run_queue\n    _run_queue_step(step)\n    ~~~~~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2347, in _run_queue_step\n    measurement(step['N'], performTomo=step['tomo'], js=js,\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                duration_s=step['duration_s'], auto=True)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1482, in measurement\n    final_kl = (kl_live.kl_rate_from_counts(N, kl_counts, kl_int_time,\n                ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                             background or {'int_time': 1.0},\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                             loss_cal, st.det_chs_for(N))\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n",
+   "finished_at": "2026-11-24T18:56:28.967881"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "6",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T18:56:28.968788",
+   "status": "failed",
+   "error": "ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1468, in measurement\n    collect(j, basis, total)\n    ~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1440, in collect\n    kl = kl_live.kl_rate_from_counts(N, kl_counts, kl_int_time,\n                                      background or {'int_time': 1.0},\n                                      loss_cal, st.det_chs_for(N))\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2389, in run_queue\n    _run_queue_step(step)\n    ~~~~~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2347, in _run_queue_step\n    measurement(step['N'], performTomo=step['tomo'], js=js,\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                duration_s=step['duration_s'], auto=True)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1482, in measurement\n    final_kl = (kl_live.kl_rate_from_counts(N, kl_counts, kl_int_time,\n                ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                             background or {'int_time': 1.0},\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                             loss_cal, st.det_chs_for(N))\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n",
+   "finished_at": "2026-11-24T18:59:16.986640"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "3",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-24T18:59:16.987632",
+   "status": "failed",
+   "error": "ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2389, in run_queue\n    _run_queue_step(step)\n    ~~~~~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2350, in _run_queue_step\n    jitter_unitary_measurement(step['N'], total_duration_s=step['total_duration_s'],\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                max_jitter_deg=step['max_jitter_deg'], auto=True)\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1586, in jitter_unitary_measurement\n    kl = kl_live.kl_rate_from_counts(N, cfg_counts, cfg_int_time, background,\n                                      loss_cal, det_chs)\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n",
+   "finished_at": "2026-11-24T19:04:02.250997"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "4",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-24T19:04:02.253076",
+   "status": "failed",
+   "error": "ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+   "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2389, in run_queue\n    _run_queue_step(step)\n    ~~~~~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 2350, in _run_queue_step\n    jitter_unitary_measurement(step['N'], total_duration_s=step['total_duration_s'],\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                max_jitter_deg=step['max_jitter_deg'], auto=True)\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\measurement.py\", line 1586, in jitter_unitary_measurement\n    kl = kl_live.kl_rate_from_counts(N, cfg_counts, cfg_int_time, background,\n                                      loss_cal, det_chs)\n  File \"C:\\Users\\Lab\\autoqstochmeasure\\src\\libraries\\kl_live.py\", line 86, in kl_rate_from_counts\n    corr = np.clip((rate - bg) / eff / (T ** k), 0, None)\n                                        ~~^^~~\nTypeError: ufunc 'power' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''\n",
+   "finished_at": "2026-11-24T19:08:17.716371"
+  },
+  {
+   "index": 8,
+   "step": {
+    "type": "jitter_5050",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0,
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T19:08:17.717965",
+   "status": "ok",
+   "elapsed_s": 1719.0918876000069,
+   "finished_at": "2026-11-24T19:36:56.788524"
+  }
+ ],
+ "stopped_by": "KeyboardInterrupt"
+}

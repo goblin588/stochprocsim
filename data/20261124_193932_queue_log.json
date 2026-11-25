@@ -1,0 +1,235 @@
+{
+ "started_at": "2026-11-24T19:39:32.119017",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-24T19:39:32.119060",
+   "status": "ok",
+   "elapsed_s": 1238.6475135000073,
+   "finished_at": "2026-11-24T20:00:10.746944"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T20:00:10.748010",
+   "status": "ok",
+   "elapsed_s": 321.4597605000017,
+   "finished_at": "2026-11-24T20:05:32.220829"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T20:05:32.222005",
+   "status": "ok",
+   "elapsed_s": 113.36361740001303,
+   "finished_at": "2026-11-24T20:07:25.599523"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T20:07:25.600380",
+   "status": "ok",
+   "elapsed_s": 1105.4963423000008,
+   "finished_at": "2026-11-24T20:25:51.111182"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "6",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T20:25:51.111931",
+   "status": "ok",
+   "elapsed_s": 1059.6579563999985,
+   "finished_at": "2026-11-24T20:43:30.785760"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "3",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-24T20:43:30.786487",
+   "status": "ok",
+   "elapsed_s": 2110.594834000003,
+   "finished_at": "2026-11-24T21:18:41.394524"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "4",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-24T21:18:41.395659",
+   "status": "ok",
+   "elapsed_s": 2078.818009800001,
+   "finished_at": "2026-11-24T21:53:20.228645"
+  },
+  {
+   "index": 8,
+   "step": {
+    "type": "jitter_5050",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0,
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T21:53:20.229968",
+   "status": "ok",
+   "elapsed_s": 2009.3237839999929,
+   "finished_at": "2026-11-24T22:26:49.565218"
+  },
+  {
+   "index": 9,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-24T22:26:49.565945",
+   "status": "ok",
+   "elapsed_s": 1273.0831965000107,
+   "finished_at": "2026-11-24T22:48:02.694162"
+  },
+  {
+   "index": 10,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T22:48:02.695337",
+   "status": "ok",
+   "elapsed_s": 321.3442454999895,
+   "finished_at": "2026-11-24T22:53:24.060438"
+  },
+  {
+   "index": 11,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T22:53:24.061202",
+   "status": "ok",
+   "elapsed_s": 113.35251639998751,
+   "finished_at": "2026-11-24T22:55:17.429657"
+  },
+  {
+   "index": 12,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 1200.0
+   },
+   "started_at": "2026-11-24T22:55:17.430835",
+   "status": "ok",
+   "elapsed_s": 1407.9686358000035,
+   "finished_at": "2026-11-24T23:18:45.421171"
+  },
+  {
+   "index": 13,
+   "step": {
+    "type": "measurement",
+    "N": "6",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 1800.0
+   },
+   "started_at": "2026-11-24T23:18:45.422364",
+   "status": "ok",
+   "elapsed_s": 1962.8551764000003,
+   "finished_at": "2026-11-24T23:51:28.236899"
+  },
+  {
+   "index": 14,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "5",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-24T23:51:28.237817",
+   "status": "ok",
+   "elapsed_s": 2187.408352300001,
+   "finished_at": "2026-11-25T00:27:55.588296"
+  },
+  {
+   "index": 15,
+   "step": {
+    "type": "jitter_unitary",
+    "N": "6",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0
+   },
+   "started_at": "2026-11-25T00:27:55.588983",
+   "status": "ok",
+   "elapsed_s": 2201.236071600011,
+   "finished_at": "2026-11-25T01:04:36.790974"
+  },
+  {
+   "index": 16,
+   "step": {
+    "type": "jitter_5050",
+    "total_duration_s": 1800.0,
+    "max_jitter_deg": 3.0,
+    "has_pbs": false
+   },
+   "started_at": "2026-11-25T01:04:36.791780",
+   "status": "ok",
+   "elapsed_s": 2122.7041836999997,
+   "finished_at": "2026-11-25T01:39:59.482972"
+  }
+ ],
+ "finished_at": "2026-11-25T01:39:59.483845",
+ "ok": 16,
+ "failed": 0
+}

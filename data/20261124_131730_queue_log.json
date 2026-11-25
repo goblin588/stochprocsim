@@ -1,0 +1,179 @@
+{
+ "started_at": "2026-11-24T13:17:30.775290",
+ "steps": [
+  {
+   "index": 1,
+   "step": {
+    "type": "tune",
+    "signal_chs": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "integration_time": null
+   },
+   "started_at": "2026-11-24T13:17:30.775332",
+   "status": "ok",
+   "elapsed_s": 1697.575650999992,
+   "finished_at": "2026-11-24T13:45:48.330170"
+  },
+  {
+   "index": 2,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T13:45:48.330828",
+   "status": "ok",
+   "elapsed_s": 321.4506579000008,
+   "finished_at": "2026-11-24T13:51:09.796944"
+  },
+  {
+   "index": 3,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T13:51:09.797998",
+   "status": "ok",
+   "elapsed_s": 113.28945520000707,
+   "finished_at": "2026-11-24T13:53:03.102212"
+  },
+  {
+   "index": 4,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T13:53:03.103263",
+   "status": "ok",
+   "elapsed_s": 1103.826576899999,
+   "finished_at": "2026-11-24T14:11:26.938644"
+  },
+  {
+   "index": 5,
+   "step": {
+    "type": "measurement",
+    "N": "3",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T14:11:26.939321",
+   "status": "ok",
+   "elapsed_s": 1074.0544506000006,
+   "finished_at": "2026-11-24T14:29:21.009908"
+  },
+  {
+   "index": 6,
+   "step": {
+    "type": "measurement",
+    "N": "4",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T14:29:21.010736",
+   "status": "ok",
+   "elapsed_s": 1055.062229400006,
+   "finished_at": "2026-11-24T14:46:56.055266"
+  },
+  {
+   "index": 7,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T14:46:56.056158",
+   "status": "ok",
+   "elapsed_s": 309.07150379999075,
+   "finished_at": "2026-11-24T14:52:05.134825"
+  },
+  {
+   "index": 8,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T14:52:05.135681",
+   "status": "ok",
+   "elapsed_s": 113.61776950000785,
+   "finished_at": "2026-11-24T14:53:58.763604"
+  },
+  {
+   "index": 9,
+   "step": {
+    "type": "measurement",
+    "N": "5",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T14:53:58.764715",
+   "status": "ok",
+   "elapsed_s": 1104.1482866000006,
+   "finished_at": "2026-11-24T15:12:22.914961"
+  },
+  {
+   "index": 10,
+   "step": {
+    "type": "measurement",
+    "N": "6",
+    "js": [
+     0
+    ],
+    "tomo": false,
+    "duration_s": 900.0
+   },
+   "started_at": "2026-11-24T15:12:22.915738",
+   "status": "ok",
+   "elapsed_s": 1061.7730383000016,
+   "finished_at": "2026-11-24T15:30:04.691120"
+  },
+  {
+   "index": 11,
+   "step": {
+    "type": "loss",
+    "stage": "loop01",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T15:30:04.691947",
+   "status": "ok",
+   "elapsed_s": 338.3010310999962,
+   "finished_at": "2026-11-24T15:35:43.005242"
+  },
+  {
+   "index": 12,
+   "step": {
+    "type": "loss",
+    "stage": "5050",
+    "has_pbs": false
+   },
+   "started_at": "2026-11-24T15:35:43.005987",
+   "status": "ok",
+   "elapsed_s": 113.3535630999977,
+   "finished_at": "2026-11-24T15:37:36.372383"
+  }
+ ],
+ "finished_at": "2026-11-24T15:37:36.373259",
+ "ok": 12,
+ "failed": 0
+}

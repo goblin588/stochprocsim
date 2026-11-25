@@ -388,6 +388,20 @@ def kl_rate_from_output_distribution(N: int, output_distribution) -> float:
     return eval_diverge(p_dist, q_dist, his_steps=N - 1)
 
 
+def kl_rate_between_distributions(N: int, p_distribution, q_distribution) -> float:
+    """KL-divergence rate (bits/step) between two arbitrary N-bin output
+    distributions, each converted to its own RenewalProcess via
+    generate_quantum_model -- same idea as kl_rate_from_output_distribution,
+    but for comparing two measured/theoretical distributions directly (e.g.
+    a measured output against a specific theory_U prediction) instead of
+    always comparing against the hardcoded uniform-renewal theory model."""
+    p_model = generate_quantum_model(p_distribution)
+    q_model = generate_quantum_model(q_distribution)
+    p_dist = p_model.steady_state @ p_model.gen_dists(N + 1)
+    q_dist = q_model.steady_state @ q_model.gen_dists(N + 1)
+    return eval_diverge(p_dist, q_dist, his_steps=N - 1)
+
+
 def kl_rate_mc_error(N: int, rates, rate_stds, T_measured: float, T_measured_std: float,
                       bg, eff, bins: list[str], bg_std=None, n_samples: int = 200,
                       rng: np.random.Generator | None = None,
